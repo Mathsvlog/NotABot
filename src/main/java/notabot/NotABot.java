@@ -1,20 +1,23 @@
 package notabot;
 
+import java.util.List;
+
 import org.ggp.base.player.gamer.exception.GamePreviewException;
 import org.ggp.base.player.gamer.statemachine.StateMachineGamer;
 import org.ggp.base.util.game.Game;
 import org.ggp.base.util.statemachine.Move;
 import org.ggp.base.util.statemachine.StateMachine;
+import org.ggp.base.util.statemachine.cache.CachedStateMachine;
 import org.ggp.base.util.statemachine.exceptions.GoalDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.MoveDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
+import org.ggp.base.util.statemachine.implementation.prover.ProverStateMachine;
 
 public class NotABot extends StateMachineGamer{
 
 	@Override
 	public StateMachine getInitialStateMachine() {
-		// TODO Auto-generated method stub
-		return null;
+		return new CachedStateMachine(new ProverStateMachine());
 	}
 
 	@Override
@@ -27,10 +30,20 @@ public class NotABot extends StateMachineGamer{
 
 	@Override
 	public Move stateMachineSelectMove(long timeout)
-			throws TransitionDefinitionException, MoveDefinitionException,
-			GoalDefinitionException {
-		// TODO Auto-generated method stub
-		return null;
+			throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
+
+		// Get list of possible moves
+		List<Move> moves = getStateMachine().getLegalMoves(getCurrentState(), getRole());
+
+		// print all moves
+		for (Move m:moves){
+			System.out.println(m);
+		}
+		System.out.println();
+
+		getStateMachine();
+
+		return moves.get(moves.size()-1);
 	}
 
 	@Override
