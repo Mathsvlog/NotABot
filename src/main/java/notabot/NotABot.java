@@ -16,11 +16,6 @@ import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
 import org.ggp.base.util.statemachine.implementation.prover.ProverStateMachine;
 
 public class NotABot extends StateMachineGamer{
-	private StateMachine stateMachine;
-
-	public NotABot(){
-		stateMachine = getInitialStateMachine();
-	}
 
 	@Override
 	public StateMachine getInitialStateMachine() {
@@ -39,24 +34,22 @@ public class NotABot extends StateMachineGamer{
 	public Move stateMachineSelectMove(long timeout)
 			throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
 
-		return getBestMove(getCurrentState());
+		Move move = getBestMove(getCurrentState());
+		System.out.println(move);
+		return move;
 	}
 
 	private Move getBestMove(MachineState state) throws MoveDefinitionException, TransitionDefinitionException, GoalDefinitionException{
-		System.out.println(stateMachine);
-		System.out.println(state);
-		System.out.println(getRole());
-		List<Move> moves = stateMachine.getLegalMoves(state, getRole());
+		List<Move> moves = getStateMachine().getLegalMoves(state, getRole());
 		Move bestMove = null;
 		MachineState bestEndState = null;
 
 		for (Move move:moves){
-			System.out.println(move);
 			List<Move> currMoves = new ArrayList<Move>();
 			currMoves.add(move);
-			MachineState currEndState = getBestEndState(stateMachine.getNextState(state, currMoves));
+			MachineState currEndState = getBestEndState(getStateMachine().getNextState(state, currMoves));
 
-			if (bestMove==null || stateMachine.getGoal(currEndState, getRole()) > stateMachine.getGoal(bestEndState, getRole())){
+			if (bestMove==null || getStateMachine().getGoal(currEndState, getRole()) > getStateMachine().getGoal(bestEndState, getRole())){
 				bestMove = move;
 				bestEndState = currEndState;
 			}
@@ -67,17 +60,17 @@ public class NotABot extends StateMachineGamer{
 	}
 
 	private MachineState getBestEndState(MachineState state) throws MoveDefinitionException, TransitionDefinitionException, GoalDefinitionException{
-		if (stateMachine.isTerminal(state)) return state;
+		if (getStateMachine().isTerminal(state)) return state;
 
-		List<Move> moves = stateMachine.getLegalMoves(state, getRole());
+		List<Move> moves = getStateMachine().getLegalMoves(state, getRole());
 		MachineState bestEndState = null;
 
 		for (Move move:moves){
 			List<Move> currMoves = new ArrayList<Move>();
 			currMoves.add(move);
-			MachineState currEndState = getBestEndState(stateMachine.getNextState(state, currMoves));
+			MachineState currEndState = getBestEndState(getStateMachine().getNextState(state, currMoves));
 
-			if (bestEndState==null || stateMachine.getGoal(currEndState, getRole()) > stateMachine.getGoal(bestEndState, getRole())){
+			if (bestEndState==null || getStateMachine().getGoal(currEndState, getRole()) > getStateMachine().getGoal(bestEndState, getRole())){
 				bestEndState = currEndState;
 			}
 
