@@ -1,3 +1,5 @@
+package notabot;
+
 import org.ggp.base.player.gamer.exception.GamePreviewException;
 import org.ggp.base.player.gamer.statemachine.StateMachineGamer;
 import org.ggp.base.util.game.Game;
@@ -7,8 +9,7 @@ import org.ggp.base.util.statemachine.exceptions.GoalDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.MoveDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
 
-
-public class NotABot extends StateMachineGamer {
+public class NotABot extends StateMachineGamer{
 
 	@Override
 	public StateMachine getInitialStateMachine() {
