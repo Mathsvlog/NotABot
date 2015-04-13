@@ -1,7 +1,6 @@
 package notabot;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Stack;
 
 import org.ggp.base.player.gamer.exception.GamePreviewException;
 import org.ggp.base.player.gamer.statemachine.StateMachineGamer;
@@ -34,54 +33,40 @@ public class NotABot extends StateMachineGamer{
 	public Move stateMachineSelectMove(long timeout)
 			throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
 
-		Move move = getBestMove(getCurrentState());
-		System.out.println(move);
-		return move;
+		Pair<Stack<Move>, Integer> moveState = getBestMovePath(getCurrentState());
+
+		return moveState.getFirst().pop();
 	}
 
-	private Move getBestMove(MachineState state) throws MoveDefinitionException, TransitionDefinitionException, GoalDefinitionException{
-		List<Move> moves = getStateMachine().getLegalMoves(state, getRole());
+	private Pair<Stack<Move>, Integer> getBestMovePath(MachineState state) throws MoveDefinitionException, TransitionDefinitionException, GoalDefinitionException{
+		if (getStateMachine().isTerminal(state)){
+			return new Pair<Stack<Move>, Integer>(new Stack<Move>(), getStateMachine().getGoal(state, getRole()));
+		}
+
+		Pair<Stack<Move>, Integer> bestMoveGoal = null;
 		Move bestMove = null;
-		MachineState bestEndState = null;
 
-		for (Move move:moves){
-			List<Move> currMoves = new ArrayList<Move>();
-			currMoves.add(move);
-			MachineState currEndState = getBestEndState(getStateMachine().getNextState(state, currMoves));
+		for (Move move: getStateMachine().getLegalMoves(state, getRole())){
+			Stack<Move> currRoleMoves = new Stack<Move>();
+			currRoleMoves.add(move);// TODO add moves for all roles
 
-			if (bestMove==null || getStateMachine().getGoal(currEndState, getRole()) > getStateMachine().getGoal(bestEndState, getRole())){
+			Pair<Stack<Move>, Integer> moveGoal = getBestMovePath(getStateMachine().getNextState(state, currRoleMoves));
+
+			if (bestMoveGoal==null ||  moveGoal.getSecond() > bestMoveGoal.getSecond()){
+				bestMoveGoal = moveGoal;
 				bestMove = move;
-				bestEndState = currEndState;
+				if (bestMoveGoal.getSecond() == 100){
+					bestMoveGoal.getFirst().add(bestMove);
+					return bestMoveGoal;
+				}
 			}
+
 
 		}
 
-		return bestMove;
-	}
+		bestMoveGoal.getFirst().add(bestMove);
 
-	private MachineState getBestEndState(MachineState state) throws MoveDefinitionException, TransitionDefinitionException, GoalDefinitionException{
-		if (getStateMachine().isTerminal(state)) return state;
-
-		List<Move> moves = getStateMachine().getLegalMoves(state, getRole());
-		MachineState bestEndState = null;
-
-		for (Move move:moves){
-			List<Move> currMoves = new ArrayList<Move>();
-			currMoves.add(move);
-			MachineState currEndState = getBestEndState(getStateMachine().getNextState(state, currMoves));
-
-			if (bestEndState==null || getStateMachine().getGoal(currEndState, getRole()) > getStateMachine().getGoal(bestEndState, getRole())){
-				bestEndState = currEndState;
-			}
-
-		}
-
-		return bestEndState;
-	}
-
-
-	private List<Move> getMoves(MachineState state) throws MoveDefinitionException{
-		return getStateMachine().getLegalMoves(state, getRole());
+		return bestMoveGoal;
 	}
 
 	@Override
