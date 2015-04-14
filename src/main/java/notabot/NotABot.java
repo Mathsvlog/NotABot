@@ -35,24 +35,32 @@ public class NotABot extends StateMachineGamer{
 	public Move stateMachineSelectMove(long timeout)
 			throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
 
-		System.out.println("________");
-		System.out.println(getStateMachine().getLegalMoves(getCurrentState(), getRole()));
-
+		// get best possible move
 		MovePath moveState = getBestMovePath(getCurrentState(), true);
 
 		return moveState.popMove();
 	}
 
+	/**
+	 * Uses minimax to compute the best possible move assuming opponents are adversarial.
+	 *
+	 * @param state current state being analyzed
+	 * @param isFirst only true for the first level of recursion
+	 * @return the move path containing the best possible move
+	 */
 	private MovePath getBestMovePath(MachineState state, boolean isFirst) throws MoveDefinitionException, TransitionDefinitionException, GoalDefinitionException{
+		// if state is terminal, return goal value of state
 		if (getStateMachine().isTerminal(state)){
 			return new MovePath(getStateMachine().getGoal(state, getRole()));
 		}
 
+		// keeps track of best move, assuming opponents will do their best move
 		MovePath bestWorst = null;
 
 		// get moveset for each opponent; compute number of opponent combinations
 		List<List<Move>> oppMoves = new ArrayList<List<Move>>();
 		int numCombinations = 1;
+		int ourRoleIndex = getStateMachine().getRoles().indexOf(getRole());
 		for (Role role: getStateMachine().getRoles()){
 			if (!role.equals(getRole())){
 				List<Move> currMoves = getStateMachine().getLegalMoves(state, role);
@@ -64,6 +72,7 @@ public class NotABot extends StateMachineGamer{
 		// for each of our possible moves
 		for (Move move: getStateMachine().getLegalMoves(state, getRole())){
 
+			// keeps track of worst outcome with our current move
 			MovePath worstBest = null;
 
 			// compute every possible combination of opponent moves
@@ -79,26 +88,25 @@ public class NotABot extends StateMachineGamer{
 					divisor *= currOppMoves.size();
 				}
 
+				moveCombo.add(ourRoleIndex, move);
+
 				// Find the worst case with this combination
-				moveCombo.add(move);
 				MovePath currComboPath = getBestMovePath(getStateMachine().getNextState(state, moveCombo), false);
 
+				// update worst outcome
 				if (worstBest == null || worstBest.getEndStateGoal() > currComboPath.getEndStateGoal()){
 					worstBest = currComboPath;
 				}
 
 			}
 
-			if (isFirst) System.out.println(move + ": " + worstBest.getEndStateGoal());
-
+			// update best outcome of the worst outcomes
 			if (bestWorst == null || bestWorst.getEndStateGoal() < worstBest.getEndStateGoal()){
 				bestWorst = worstBest;
 				bestWorst.pushMove(move);
 			}
 
 		}
-
-		if (isFirst) System.out.println();
 
 		return bestWorst;
 	}
