@@ -33,30 +33,30 @@ public class NotABot extends StateMachineGamer{
 	public Move stateMachineSelectMove(long timeout)
 			throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
 
-		Pair<Stack<Move>, Integer> moveState = getBestMovePath(getCurrentState());
+		MovePath moveState = getBestMovePath(getCurrentState());
 
-		return moveState.getFirst().pop();
+		return moveState.popMove();
 	}
 
-	private Pair<Stack<Move>, Integer> getBestMovePath(MachineState state) throws MoveDefinitionException, TransitionDefinitionException, GoalDefinitionException{
+	private MovePath getBestMovePath(MachineState state) throws MoveDefinitionException, TransitionDefinitionException, GoalDefinitionException{
 		if (getStateMachine().isTerminal(state)){
-			return new Pair<Stack<Move>, Integer>(new Stack<Move>(), getStateMachine().getGoal(state, getRole()));
+			return new MovePath(getStateMachine().getGoal(state, getRole()));
 		}
 
-		Pair<Stack<Move>, Integer> bestMoveGoal = null;
+		MovePath bestMoveGoal = null;
 		Move bestMove = null;
 
 		for (Move move: getStateMachine().getLegalMoves(state, getRole())){
 			Stack<Move> currRoleMoves = new Stack<Move>();
 			currRoleMoves.add(move);// TODO add moves for all roles
 
-			Pair<Stack<Move>, Integer> moveGoal = getBestMovePath(getStateMachine().getNextState(state, currRoleMoves));
+			MovePath moveGoal = getBestMovePath(getStateMachine().getNextState(state, currRoleMoves));
 
-			if (bestMoveGoal==null ||  moveGoal.getSecond() > bestMoveGoal.getSecond()){
+			if (bestMoveGoal==null ||  moveGoal.getEndStateGoal() > bestMoveGoal.getEndStateGoal()){
 				bestMoveGoal = moveGoal;
 				bestMove = move;
-				if (bestMoveGoal.getSecond() == 100){
-					bestMoveGoal.getFirst().add(bestMove);
+				if (bestMoveGoal.getEndStateGoal() == 100){
+					bestMoveGoal.pushMove(bestMove);
 					return bestMoveGoal;
 				}
 			}
@@ -64,7 +64,7 @@ public class NotABot extends StateMachineGamer{
 
 		}
 
-		bestMoveGoal.getFirst().add(bestMove);
+		bestMoveGoal.pushMove(bestMove);
 
 		return bestMoveGoal;
 	}
