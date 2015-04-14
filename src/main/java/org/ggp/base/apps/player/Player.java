@@ -104,7 +104,7 @@ public final class Player extends JPanel
 			    gamers.remove(gamer);
 			}
 		}
-		typeComboBox.setSelectedItem("Random");
+		typeComboBox.setSelectedItem("NotABot");
 
 		JPanel managerPanel = new JPanel(new GridBagLayout());
 		managerPanel.setBorder(new TitledBorder("Manager"));

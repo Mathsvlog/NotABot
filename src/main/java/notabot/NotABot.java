@@ -36,9 +36,13 @@ public class NotABot extends StateMachineGamer{
 			throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
 
 		// get best possible move
-		MovePath moveState = getBestMovePath(getCurrentState(), true);
+		MovePath moveState = getBestMovePath();
 
 		return moveState.popMove();
+	}
+
+	private MovePath getBestMovePath() throws MoveDefinitionException, TransitionDefinitionException, GoalDefinitionException{
+		return getBestMovePath(getCurrentState(), Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY, true);
 	}
 
 	/**
@@ -48,7 +52,7 @@ public class NotABot extends StateMachineGamer{
 	 * @param isFirst only true for the first level of recursion
 	 * @return the move path containing the best possible move
 	 */
-	private MovePath getBestMovePath(MachineState state, boolean isFirst) throws MoveDefinitionException, TransitionDefinitionException, GoalDefinitionException{
+	private MovePath getBestMovePath(MachineState state, double alpha, double beta, boolean isFirst) throws MoveDefinitionException, TransitionDefinitionException, GoalDefinitionException{
 		// if state is terminal, return goal value of state
 		if (getStateMachine().isTerminal(state)){
 			return new MovePath(getStateMachine().getGoal(state, getRole()));
@@ -75,6 +79,8 @@ public class NotABot extends StateMachineGamer{
 			// keeps track of worst outcome with our current move
 			MovePath worstBest = null;
 
+			double minNodeBeta = beta;
+
 			// compute every possible combination of opponent moves
 			for (int i = 0; i < numCombinations; i++) {
 
@@ -91,20 +97,30 @@ public class NotABot extends StateMachineGamer{
 				moveCombo.add(ourRoleIndex, move);
 
 				// Find the worst case with this combination
-				MovePath currComboPath = getBestMovePath(getStateMachine().getNextState(state, moveCombo), false);
+				MovePath currComboPath = getBestMovePath(getStateMachine().getNextState(state, moveCombo), alpha, beta, false);
+
 
 				// update worst outcome
 				if (worstBest == null || worstBest.getEndStateGoal() > currComboPath.getEndStateGoal()){
 					worstBest = currComboPath;
 				}
 
+				// min node
+				minNodeBeta = Math.min(minNodeBeta, currComboPath.getEndStateGoal());
+				if (alpha >= minNodeBeta) break;
 			}
+
 
 			// update best outcome of the worst outcomes
 			if (bestWorst == null || bestWorst.getEndStateGoal() < worstBest.getEndStateGoal()){
 				bestWorst = worstBest;
 				bestWorst.pushMove(move);
 			}
+			if (isFirst) System.out.println(move + ": " + bestWorst.getEndStateGoal() + " (alpha) " + alpha + " (beta) " + beta);
+
+			// max node
+			alpha = Math.max(alpha, bestWorst.getEndStateGoal());
+			if (alpha >= beta) break;
 
 		}
 
