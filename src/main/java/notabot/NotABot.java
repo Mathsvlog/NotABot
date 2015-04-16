@@ -18,6 +18,9 @@ import org.ggp.base.util.statemachine.implementation.prover.ProverStateMachine;
 
 public class NotABot extends StateMachineGamer{
 
+	private long timeout;
+	private static final long TIME_CUSHION = 2500;
+
 	@Override
 	public StateMachine getInitialStateMachine() {
 		return new CachedStateMachine(new ProverStateMachine());
@@ -35,8 +38,12 @@ public class NotABot extends StateMachineGamer{
 	public Move stateMachineSelectMove(long timeout)
 			throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
 
+		this.timeout = timeout - TIME_CUSHION;
+
 		// get best possible move
 		MovePath moveState = getBestMovePath();
+
+		System.out.println("TIME: " + (timeout - System.currentTimeMillis()));
 
 		return moveState.popMove();
 	}
@@ -53,8 +60,9 @@ public class NotABot extends StateMachineGamer{
 	 * @return the move path containing the best possible move
 	 */
 	private MovePath getBestMovePath(MachineState state, double alpha, double beta, boolean isFirst) throws MoveDefinitionException, TransitionDefinitionException, GoalDefinitionException{
+
 		// if state is terminal, return goal value of state
-		if (getStateMachine().isTerminal(state)){
+		if (getStateMachine().isTerminal(state) || timeout < System.currentTimeMillis()){
 			return new MovePath(getStateMachine().getGoal(state, getRole()));
 		}
 
