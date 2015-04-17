@@ -1,4 +1,6 @@
-package notabot;
+package notabot.player;
+
+import notabot.NotABot;
 
 import org.ggp.base.util.statemachine.Move;
 import org.ggp.base.util.statemachine.exceptions.GoalDefinitionException;

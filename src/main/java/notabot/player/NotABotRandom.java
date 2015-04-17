@@ -1,7 +1,9 @@
-package notabot;
+package notabot.player;
 
 import java.util.List;
 import java.util.Random;
+
+import notabot.NotABot;
 
 import org.ggp.base.util.statemachine.Move;
 import org.ggp.base.util.statemachine.exceptions.GoalDefinitionException;

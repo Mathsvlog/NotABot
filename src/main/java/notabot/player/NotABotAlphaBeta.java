@@ -1,7 +1,10 @@
-package notabot;
+package notabot.player;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import notabot.MovePath;
+import notabot.NotABot;
 
 import org.ggp.base.util.statemachine.MachineState;
 import org.ggp.base.util.statemachine.Move;
@@ -89,7 +92,10 @@ public class NotABotAlphaBeta extends NotABot{
 
 				// min node
 				minNodeBeta = Math.min(minNodeBeta, currComboPath.getEndStateGoal());
-				if (alpha >= minNodeBeta) break;
+				if (alpha >= minNodeBeta){
+					System.out.println("MIN NODE BREAK");
+					break;
+				}
 			}
 
 
@@ -102,7 +108,10 @@ public class NotABotAlphaBeta extends NotABot{
 
 			// max node
 			alpha = Math.max(alpha, bestWorst.getEndStateGoal());
-			if (alpha >= beta) break;
+			if (alpha >= beta){
+				System.out.println("MAX NODE BREAK");
+				break;
+			}
 
 		}
 
