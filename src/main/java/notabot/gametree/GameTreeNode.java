@@ -6,6 +6,8 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Random;
 
+import notabot.MoveScore;
+
 import org.ggp.base.util.statemachine.MachineState;
 import org.ggp.base.util.statemachine.Move;
 import org.ggp.base.util.statemachine.Role;
@@ -31,6 +33,8 @@ public class GameTreeNode {
 	boolean isTerminal;
 	List<Move> playerMoves;
 	int numPlayerMoves;
+
+	int lastComboSampled = -1;
 
 	int numSamples[];// number of samples done for each of this player's moves
 	long sumSamples[];// running sum of samples for each of this player's moves
@@ -111,12 +115,19 @@ public class GameTreeNode {
 	/**
 	 * Run one sample from this node
 	 */
-	public int runSample(){
+	public int runSample(int expansionDepth){
 		if (isTerminal){
 			return terminalGoal;
 		}
 
-		int combo = rand.nextInt(numMoveCombos);
+		int combo;
+		if (expansionDepth == 0){
+			combo = rand.nextInt(numMoveCombos);
+		}
+		else{
+			combo = (lastComboSampled + 1) % numMoveCombos;
+			expansionDepth --;
+		}
 
 		int playerMoveIndex = combo % numPlayerMoves;
 
@@ -124,9 +135,10 @@ public class GameTreeNode {
 			createChild(combo);
 		}
 
-		int goal = children[combo].runSample();
+		int goal = children[combo].runSample(expansionDepth);
 		sumSamples[playerMoveIndex] += goal;
 		numSamples[playerMoveIndex] ++;
+		lastComboSampled = combo;
 
 		return goal;
 	}
@@ -187,7 +199,7 @@ public class GameTreeNode {
 	 * Compute the best move for the current node
 	 * based on information from the samples run so far
 	 */
-	public Move getBestMove(boolean printout){
+	public MoveScore getBestMove(boolean printout){
 		if (printout) System.out.println("SCORE FOR EACH MOVE: ");
 		//List<Move> moves = stateMachine.getLegalMoves(state, roles.get(playerIndex));
 		Move bestMove = null;
@@ -203,8 +215,87 @@ public class GameTreeNode {
 			}
 		}
 
-		return bestMove;
+		return new MoveScore(bestScore);
 	}
+
+	public double getScore(){
+		int totalNumSamples = 0;
+		long totalSumSamples = 0;
+		for (int i=0; i<numPlayerMoves; i++){
+			totalNumSamples += numSamples[i];
+			totalSumSamples += sumSamples[i];
+		}
+		return ((double) totalSumSamples)/totalNumSamples;
+	}
+
+	public MoveScore getBestMove(int level, double alpha, double beta, boolean isFirst) throws MoveDefinitionException, TransitionDefinitionException, GoalDefinitionException{
+		// if state is terminal, return goal value of state
+		if (isTerminal){
+			return new MoveScore(terminalGoal);
+		}
+
+		// stop when reached max level
+		if (level == 0){
+			return new MoveScore(getScore());
+		}
+
+
+		// keeps track of best move, assuming opponents will do their best move
+		MoveScore bestWorst = null;
+
+		// for each of our possible moves
+		//for (Move move: getMoves(state)){
+		for (int i=0; i<numPlayerMoves; i++){
+
+			// keeps track of worst outcome with our current move
+			MoveScore worstBest = null;
+			Move move = playerMoves.get(i);
+
+			double minNodeBeta = beta;//
+			int combo = i;
+
+			// compute every possible combination of opponent moves
+			//for (int i = 0; i < numCombinations; i++) {
+			for (int j=0; j<numMoveCombos/numPlayerMoves; j++){
+
+				// i is playerMoveIndex
+				GameTreeNode child = children[combo];
+				combo += numPlayerMoves;
+
+				// Find the worst case with this combination]
+				MoveScore currMoveScore = child.getBestMove(level-1, alpha, minNodeBeta, false);
+				currMoveScore.updateMove(move);
+
+				// update worst outcome
+				if (worstBest == null || worstBest.getScore() > currMoveScore.getScore()){
+					worstBest = currMoveScore;
+				}
+
+				// min node
+				minNodeBeta = Math.min(minNodeBeta, currMoveScore.getScore());
+				if (alpha >= minNodeBeta){
+					//System.out.println("MIN NODE BREAK");
+					break;
+				}
+			}
+
+			// update best outcome of the worst outcomes
+			if (bestWorst == null || bestWorst.getScore() < worstBest.getScore()){
+				bestWorst = worstBest;
+				bestWorst.updateMove(move);
+			}
+
+			// max node
+			alpha = Math.max(alpha, bestWorst.getScore());
+			if (alpha >= beta){
+				//System.out.println("MAX NODE BREAK");
+				break;
+			}
+		}
+
+		return bestWorst;
+	}
+
 
 
 }

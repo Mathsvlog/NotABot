@@ -1,14 +1,20 @@
 package notabot.gametree;
 
+import notabot.MoveScore;
+
 import org.ggp.base.util.statemachine.MachineState;
 import org.ggp.base.util.statemachine.Move;
 import org.ggp.base.util.statemachine.Role;
 import org.ggp.base.util.statemachine.StateMachine;
+import org.ggp.base.util.statemachine.exceptions.GoalDefinitionException;
+import org.ggp.base.util.statemachine.exceptions.MoveDefinitionException;
+import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
 
 public class GameTree {
 
 	private StateMachine stateMachine;
 	private GameTreeNode root;
+	private static final int EXPANSION_DEPTH = 3;
 
 	public GameTree(StateMachine stateMachine, MachineState initialState, Role playerRole){
 		this.stateMachine = stateMachine;
@@ -20,7 +26,7 @@ public class GameTree {
 	 * Perform one sample down the tree
 	 */
 	public void runSample(){
-		root.runSample();
+		root.runSample(EXPANSION_DEPTH);
 	}
 
 	/**
@@ -32,7 +38,15 @@ public class GameTree {
 	}
 
 	public Move getBestMove(boolean printout){
-		return root.getBestMove(printout);
+		MoveScore ms;
+		try {
+			ms = root.getBestMove(EXPANSION_DEPTH, Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY, true);
+			return ms.getMove();
+		}
+		catch (MoveDefinitionException | TransitionDefinitionException | GoalDefinitionException e) {
+			e.printStackTrace();
+		}
+		return null;
 	}
 
 }
