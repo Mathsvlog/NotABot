@@ -33,7 +33,7 @@ public class GameTreeNode {
 	int numPlayerMoves;
 
 	int numSamples[];// number of samples done for each of this player's moves
-	int sumSamples[];// running sum of samples for each of this player's moves
+	long sumSamples[];// running sum of samples for each of this player's moves
 
 	/**
 	 * Constructor for the initial root of the tree
@@ -77,7 +77,7 @@ public class GameTreeNode {
 				playerMoves = new ArrayList<Move>(stateMachine.getLegalMoves(state, roles.get(playerIndex)));
 				numPlayerMoves = playerMoves.size();
 				numSamples = new int[numPlayerMoves];
-				sumSamples = new int[numPlayerMoves];
+				sumSamples = new long[numPlayerMoves];
 
 				Collections.sort(playerMoves, moveComparator);
 			}
@@ -85,7 +85,7 @@ public class GameTreeNode {
 				e.printStackTrace();
 				numMoveCombos = 1;
 				numSamples = new int[1];
-				sumSamples = new int[1];
+				sumSamples = new long[1];
 			}
 
 		}
