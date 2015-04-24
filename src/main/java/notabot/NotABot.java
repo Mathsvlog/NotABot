@@ -20,7 +20,7 @@ public abstract class NotABot extends StateMachineGamer{
 	// time at which computation must stop
 	private long timeout;
 	// time left that computation of a move or metagame must stop
-	private static final long TIME_CUSHION = 2500;
+	private static final long TIME_CUSHION = 500;
 
 	/**
 	 * Run metagame before the game starts
@@ -86,7 +86,7 @@ public abstract class NotABot extends StateMachineGamer{
 		// get best possible move
 		Move move = getBestMove();
 
-		System.out.println("TIME: " + (timeout - System.currentTimeMillis()) + " - Move: "+ move);
+		System.out.println("TIME: " + (timeout - System.currentTimeMillis()) + " - Move: "+ move + "\n");
 
 		return move;
 	}

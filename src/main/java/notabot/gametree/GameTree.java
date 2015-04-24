@@ -26,12 +26,13 @@ public class GameTree {
 	/**
 	 * Go down the tree by one step
 	 */
-	public void traverse(){
-		// TODO
+	public void traverse(MachineState newState){
+		if (root.isState(newState)) return;
+		root = root.getChildWithState(newState);
 	}
 
-	public Move getBestMove(){
-		return root.getBestMove();
+	public Move getBestMove(boolean printout){
+		return root.getBestMove(printout);
 	}
 
 }
