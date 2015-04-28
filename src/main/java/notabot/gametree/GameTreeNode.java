@@ -36,8 +36,10 @@ public class GameTreeNode {
 
 	int lastComboSampled = -1;
 
-	int numSamples[];// number of samples done for each of this player's moves
-	long sumSamples[];// running sum of samples for each of this player's moves
+	//int numSamples[];// number of samples done for each of this player's moves
+	//long sumSamples[];// running sum of samples for each of this player's moves
+	int numSamples = 0;
+	long sumSamples = 0;
 
 	/**
 	 * Constructor for the initial root of the tree
@@ -80,16 +82,16 @@ public class GameTreeNode {
 				children = new GameTreeNode[numMoveCombos];
 				playerMoves = new ArrayList<Move>(stateMachine.getLegalMoves(state, roles.get(playerIndex)));
 				numPlayerMoves = playerMoves.size();
-				numSamples = new int[numPlayerMoves];
-				sumSamples = new long[numPlayerMoves];
+				//numSamples = new int[numPlayerMoves];
+				//sumSamples = new long[numPlayerMoves];
 
 				Collections.sort(playerMoves, moveComparator);
 			}
 			catch (MoveDefinitionException e){
 				e.printStackTrace();
 				numMoveCombos = 1;
-				numSamples = new int[1];
-				sumSamples = new long[1];
+				//numSamples = new int[1];
+				//sumSamples = new long[1];
 			}
 
 		}
@@ -112,22 +114,32 @@ public class GameTreeNode {
 		}
 	}
 
+	public void buildTree(int expansionDepth){
+		if (isTerminal) return;
+
+		if (expansionDepth==0){
+			runSample();
+			return;
+		}
+
+		for (int i=0; i<numMoveCombos; i++){
+			if (children[i] == null){
+				createChild(i);
+			}
+
+			children[i].buildTree(expansionDepth-1);
+		}
+	}
+
 	/**
 	 * Run one sample from this node
 	 */
-	public int runSample(int expansionDepth){
+	public int runSample(){
 		if (isTerminal){
 			return terminalGoal;
 		}
 
-		int combo;
-		if (expansionDepth == 0){
-			combo = rand.nextInt(numMoveCombos);
-		}
-		else{
-			combo = (lastComboSampled + 1) % numMoveCombos;
-			expansionDepth --;
-		}
+		int combo = rand.nextInt(numMoveCombos);
 
 		int playerMoveIndex = combo % numPlayerMoves;
 
@@ -135,9 +147,11 @@ public class GameTreeNode {
 			createChild(combo);
 		}
 
-		int goal = children[combo].runSample(expansionDepth);
-		sumSamples[playerMoveIndex] += goal;
-		numSamples[playerMoveIndex] ++;
+		int goal = children[combo].runSample();
+		//sumSamples[playerMoveIndex] += goal;
+		//numSamples[playerMoveIndex] ++;
+		sumSamples += goal;
+		numSamples ++;
 		lastComboSampled = combo;
 
 		return goal;
@@ -160,6 +174,7 @@ public class GameTreeNode {
 			}
 		}
 		System.out.println("COULD NOT FIND CHILD");
+
 		return null;
 	}
 
@@ -169,7 +184,7 @@ public class GameTreeNode {
 			List<Move> moveCombo = new ArrayList<Move>();
 			List<Move> playerMoves = stateMachine.getLegalMoves(state, roles.get(playerIndex));
 			int divisor = numPlayerMoves;
-			int playerMoveIndex = combo%divisor;
+			int playerMoveIndex = combo%numPlayerMoves;
 
 			// get each opponent's move for current combination
 			for (int r = 0; r < numRoles; r++) {
@@ -199,6 +214,7 @@ public class GameTreeNode {
 	 * Compute the best move for the current node
 	 * based on information from the samples run so far
 	 */
+	/*
 	public MoveScore getBestMove(boolean printout){
 		if (printout) System.out.println("SCORE FOR EACH MOVE: ");
 		//List<Move> moves = stateMachine.getLegalMoves(state, roles.get(playerIndex));
@@ -217,8 +233,10 @@ public class GameTreeNode {
 
 		return new MoveScore(bestScore);
 	}
+	*/
 
 	public double getScore(){
+		/*
 		int totalNumSamples = 0;
 		long totalSumSamples = 0;
 		for (int i=0; i<numPlayerMoves; i++){
@@ -226,6 +244,8 @@ public class GameTreeNode {
 			totalSumSamples += sumSamples[i];
 		}
 		return ((double) totalSumSamples)/totalNumSamples;
+		*/
+		return ((double) sumSamples)/numSamples;
 	}
 
 	public MoveScore getBestMove(int level, double alpha, double beta, boolean isFirst) throws MoveDefinitionException, TransitionDefinitionException, GoalDefinitionException{
@@ -277,7 +297,9 @@ public class GameTreeNode {
 					//System.out.println("MIN NODE BREAK");
 					break;
 				}
+
 			}
+			if (isFirst) System.out.println(move + " : " + worstBest.getScore());
 
 			// update best outcome of the worst outcomes
 			if (bestWorst == null || bestWorst.getScore() < worstBest.getScore()){

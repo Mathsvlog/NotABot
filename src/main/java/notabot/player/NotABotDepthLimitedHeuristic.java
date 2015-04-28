@@ -15,20 +15,49 @@ import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
 
 public class NotABotDepthLimitedHeuristic extends NotABot {
 
-	private final int MAX_LEVEL = 4;
-	private final double WEIGHT_ONE_STEP = 0.5;
-	private final double WEIGHT_GOAL_PROX = 0.5;
-	private final double WEIGHT_OPP_ONE_STEP = 0.5;
+	private final int MAX_LEVEL = 1;
+	private final double WEIGHT_ONE_STEP = 0;
+	private final double WEIGHT_GOAL_PROX = 0;
+	private final double WEIGHT_OPP_ONE_STEP = 0;
+	private final double WEIGHT_MONTE_CARLO = 1;
+	private final int MONTE_CARLO_SAMPLES = 5;
 
-	private final double WEIGHT_TOTAL = WEIGHT_ONE_STEP+WEIGHT_GOAL_PROX+WEIGHT_OPP_ONE_STEP;
+
+	private final double WEIGHT_TOTAL = WEIGHT_ONE_STEP+WEIGHT_GOAL_PROX+WEIGHT_OPP_ONE_STEP+WEIGHT_MONTE_CARLO;
 
 	@Override
 	protected void runMetaGame() {
+		/*
+		try{
+			int maxSizeTree = 1;
+
+			while (!hasTimedOut()){
+				int sizeTree = 1;
+				int depth = 0;
+
+				MachineState curr = getCurrentState();
+				while (!getStateMachine().isTerminal(curr)){
+					curr = getStateMachine().getRandomNextState(curr);
+					sizeTree *= getMoves(curr).size();
+					depth ++;
+				}
+
+			}
+		}
+		catch (Exception e){
+			e.printStackTrace();
+		}
+		*/
 	}
 
 	@Override
 	protected Move getBestMove() throws MoveDefinitionException,
 			TransitionDefinitionException, GoalDefinitionException {
+
+		if (getMoves().size()==1){
+			return getMoves().get(0);
+		}
+
 		MovePath movePath = getBestMovePath(getCurrentState(), 0, Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY, true);
 		return movePath.popMove();
 	}
@@ -58,18 +87,33 @@ public class NotABotDepthLimitedHeuristic extends NotABot {
 		return getStateMachine().getGoal(state, getRole());
 	}
 
+	private double heuristicMonteCarlo(MachineState state) throws MoveDefinitionException, TransitionDefinitionException, GoalDefinitionException{
+		long sumSamples = 0;
+		for (int i=0; i<MONTE_CARLO_SAMPLES; i++){
+			MachineState curr = state;
+			while (!getStateMachine().isTerminal(curr))
+				curr = getStateMachine().getRandomNextState(curr);
+			sumSamples += getStateMachine().getGoal(curr, getRole());
+		}
+		return ((double)sumSamples) /  MONTE_CARLO_SAMPLES;
+	}
+
 	/**
 	 * Computes a heuristic value of the current state
 	 * @throws GoalDefinitionException
+	 * @throws TransitionDefinitionException
 	 */
-	private int computeHeuristic(MachineState state) throws MoveDefinitionException, GoalDefinitionException{
+	private int computeHeuristic(MachineState state) throws MoveDefinitionException, GoalDefinitionException, TransitionDefinitionException{
 		Double heuristic = new Double(0);
 
 		if (WEIGHT_ONE_STEP > 0) heuristic += heuristicOneStepMobility(state)*WEIGHT_ONE_STEP;
 		if (WEIGHT_GOAL_PROX > 0) heuristic += heuristicOneStepMobility(state)*WEIGHT_GOAL_PROX;
 		if (WEIGHT_OPP_ONE_STEP > 0) heuristic += heuristicOpponentMobility(state)*WEIGHT_OPP_ONE_STEP;
+		if (WEIGHT_MONTE_CARLO > 0) heuristic += heuristicMonteCarlo(state)*WEIGHT_MONTE_CARLO;
 
 		heuristic /= WEIGHT_TOTAL;
+
+		System.out.println("HEURISTIC: " + heuristic);
 
 		return heuristic.intValue();
 	}
@@ -90,7 +134,7 @@ public class NotABotDepthLimitedHeuristic extends NotABot {
 		// stop when reached max level
 		if (level == MAX_LEVEL){
 			int heuristic = computeHeuristic(state);
-			System.out.println("HIT MAX LEVEL: "+heuristic);
+			//System.out.println("HIT MAX LEVEL: "+heuristic);
 			return new MovePath(heuristic);
 		}
 
@@ -146,7 +190,7 @@ public class NotABotDepthLimitedHeuristic extends NotABot {
 				// min node
 				minNodeBeta = Math.min(minNodeBeta, currComboPath.getEndStateGoal());
 				if (alpha >= minNodeBeta){
-					System.out.println("MIN NODE BREAK");
+					//System.out.println("MIN NODE BREAK");
 					break;
 				}
 			}
@@ -157,12 +201,17 @@ public class NotABotDepthLimitedHeuristic extends NotABot {
 				bestWorst.pushMove(move);
 			}
 
+			if (isFirst){
+				System.out.println(move + " : " + bestWorst.getEndStateGoal());
+			}
+
 			// max node
 			alpha = Math.max(alpha, bestWorst.getEndStateGoal());
 			if (alpha >= beta){
-				System.out.println("MAX NODE BREAK");
+				//System.out.println("MAX NODE BREAK");
 				break;
 			}
+
 		}
 
 		return bestWorst;

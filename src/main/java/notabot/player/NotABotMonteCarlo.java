@@ -29,7 +29,7 @@ public class NotABotMonteCarlo extends NotABot {
 			TransitionDefinitionException, GoalDefinitionException {
 		// update tree with moves from last turn
 		tree.traverse(getCurrentState());
-		previewBestMove();
+		//previewBestMove();
 
 		// run samples
 		sampleUntilTimeout();

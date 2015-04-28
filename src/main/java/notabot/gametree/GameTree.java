@@ -14,7 +14,7 @@ public class GameTree {
 
 	private StateMachine stateMachine;
 	private GameTreeNode root;
-	private static final int EXPANSION_DEPTH = 3;
+	private static final int EXPANSION_DEPTH = 10;
 
 	public GameTree(StateMachine stateMachine, MachineState initialState, Role playerRole){
 		this.stateMachine = stateMachine;
@@ -26,7 +26,7 @@ public class GameTree {
 	 * Perform one sample down the tree
 	 */
 	public void runSample(){
-		root.runSample(EXPANSION_DEPTH);
+		root.buildTree(EXPANSION_DEPTH);
 	}
 
 	/**
