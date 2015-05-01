@@ -18,7 +18,7 @@ import org.ggp.base.util.statemachine.implementation.prover.ProverStateMachine;
 public abstract class NotABot extends StateMachineGamer{
 
 	// time at which computation must stop
-	private long timeout;
+	private static long timeout;
 	// time left that computation of a move or metagame must stop
 	private static final long TIME_CUSHION = 2500;
 
@@ -36,8 +36,8 @@ public abstract class NotABot extends StateMachineGamer{
 	/**
 	 * @return true if the timer has sufficiently run out
 	 */
-	protected boolean hasTimedOut(){
-		return timeout < System.currentTimeMillis();
+	public static boolean hasTimedOut(){
+		return NotABot.timeout < System.currentTimeMillis();
 	}
 
 	/**
@@ -70,7 +70,7 @@ public abstract class NotABot extends StateMachineGamer{
 			throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
 
 		// update time at which timeout will occur
-		this.timeout = timeout - TIME_CUSHION;
+		NotABot.timeout = timeout - TIME_CUSHION;
 
 		// inheriting subclass will run metagame
 		runMetaGame();

@@ -14,19 +14,22 @@ public class GameTree {
 
 	private StateMachine stateMachine;
 	private GameTreeNode root;
-	private static final int EXPANSION_DEPTH = 10;
+	private final int numRoles;
 
 	public GameTree(StateMachine stateMachine, MachineState initialState, Role playerRole){
 		this.stateMachine = stateMachine;
 		int playerIndex = stateMachine.getRoles().indexOf(playerRole);
 		root = new GameTreeNode(initialState, stateMachine, playerIndex);
+		numRoles = stateMachine.getRoles().size();
 	}
 
 	/**
 	 * Perform one sample down the tree
 	 */
 	public void runSample(){
-		root.buildTree(EXPANSION_DEPTH);
+		GameTreeNode selected = root.selectNode();
+		//selected.expandNode((selected==root)?numRoles:numRoles-1);
+		selected.expandNode(0);
 	}
 
 	/**
@@ -40,7 +43,7 @@ public class GameTree {
 	public Move getBestMove(boolean printout){
 		MoveScore ms;
 		try {
-			ms = root.getBestMove(EXPANSION_DEPTH, Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY, true);
+			ms = root.getBestMove(numRoles, Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY, true);
 			return ms.getMove();
 		}
 		catch (MoveDefinitionException | TransitionDefinitionException | GoalDefinitionException e) {
@@ -48,5 +51,6 @@ public class GameTree {
 		}
 		return null;
 	}
+
 
 }

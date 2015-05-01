@@ -46,7 +46,7 @@ public class NotABotMonteCarlo extends NotABot {
 	private void sampleUntilTimeout(){
 		// run samples until time runs out
 		int numSamples = 0;
-		while (!hasTimedOut()){
+		while (!NotABot.hasTimedOut()){
 			tree.runSample();
 			numSamples++;
 		}
