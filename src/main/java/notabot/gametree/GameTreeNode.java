@@ -25,8 +25,9 @@ public class GameTreeNode {
 	private static int playerIndex;// this player's role index
 	private static StateMachine stateMachine;// state machine for the game
 	private static int numNodesCreated=0;
-	private static MoveComparator moveComparator;
-	private static int numDepthCharges = 0;
+	private static MoveComparator moveComparator;// used to sort move lists
+	private static int numDepthCharges = 0;// used to count number of paths sampled during turn
+	private static double selectTemperature;
 
 	MachineState state;// the state this node represents
 	int numMoveCombos;// the number of move combinations
@@ -35,18 +36,9 @@ public class GameTreeNode {
 	boolean isTerminal;
 	List<Move> playerMoves;
 	int numPlayerMoves;
-	GameTreeNode parent;
 
 	int numVisits = 0;
 	long sumSamples = 0;
-
-	public static void resetDepthChargeCounter(){
-		numDepthCharges = 0;
-	}
-
-	public static int getNumDepthCharges(){
-		return numDepthCharges;
-	}
 
 	/**
 	 * Constructor for the initial root of the tree
@@ -58,21 +50,20 @@ public class GameTreeNode {
 		GameTreeNode.stateMachine = stateMachine;
 		GameTreeNode.playerIndex = playerIndex;
 		GameTreeNode.moveComparator = new MoveComparator();
-		constructGameTreeNode(state, null);
+		constructGameTreeNode(state);
 	}
 
 	/**
 	 * Constructor for any state except the initial state
 	 */
 	public GameTreeNode(MachineState state, GameTreeNode parent){
-		constructGameTreeNode(state, parent);
+		constructGameTreeNode(state);
 	}
 
 	/**
 	 * Constructor helper for GameTreeNode
 	 */
-	private void constructGameTreeNode(MachineState state, GameTreeNode parent){
-		this.parent = parent;
+	private void constructGameTreeNode(MachineState state){
 		numNodesCreated++;
 		this.state = state;
 		isTerminal = stateMachine.isTerminal(state);
@@ -90,16 +81,12 @@ public class GameTreeNode {
 				children = new GameTreeNode[numMoveCombos];
 				playerMoves = new ArrayList<Move>(stateMachine.getLegalMoves(state, roles.get(playerIndex)));
 				numPlayerMoves = playerMoves.size();
-				//numSamples = new int[numPlayerMoves];
-				//sumSamples = new long[numPlayerMoves];
 
 				Collections.sort(playerMoves, moveComparator);
 			}
 			catch (MoveDefinitionException e){
 				e.printStackTrace();
 				numMoveCombos = 1;
-				//numSamples = new int[1];
-				//sumSamples = new long[1];
 			}
 
 		}
@@ -136,17 +123,20 @@ public class GameTreeNode {
 		// pick child with best heuristic score
 		double bestScore = 0;
 		GameTreeNode bestNode = this;
+		Move m = null;
 		for (int i=0; i<numMoveCombos; i++){
-			double currScore = children[i].selectFunction();
+			double currScore = children[i].selectFunction(numVisits);
 			if (currScore > bestScore){
 				bestScore = currScore;
 				bestNode = children[i];
+				m = playerMoves.get(i%numPlayerMoves);
 			}
 		}
 
 		if (bestNode==null){
 			System.out.println("SELECT PHASE RETURNED NULL");
 		}
+		//System.out.println(m.toString() + " : " + (int)bestScore + ", " + (int)bestNode.getScore());
 
 		return bestNode;
 	}
@@ -154,10 +144,8 @@ public class GameTreeNode {
 	/**
 	 * Heuristic used during selection phase of MCTS
 	 */
-	double selectFunction(){
-		//return (((double) sumSamples)/numVisits) + Math.sqrt(2*Math.log(parent.getNumVisits())/numVisits);
-		// TODO implement temperature/simulated annealing
-		return (((double) sumSamples)/numVisits) + 100*Math.sqrt(Math.log(parent.getNumVisits())/numVisits);
+	double selectFunction(int parentNumVisits){
+		return getScore() + GameTreeNode.selectTemperature*Math.sqrt(Math.log(parentNumVisits)/numVisits);
 	}
 
 	/**
@@ -215,7 +203,7 @@ public class GameTreeNode {
 	 */
 	public int runSample(){
 		if (isTerminal){
-			numDepthCharges++;
+			GameTreeNode.numDepthCharges++;
 			return terminalGoal;
 		}
 
@@ -257,7 +245,6 @@ public class GameTreeNode {
 		try {
 			// compute move combo
 			List<Move> moveCombo = new ArrayList<Move>();
-			//List<Move> playerMoves = stateMachine.getLegalMoves(state, roles.get(playerIndex));
 			int divisor = numPlayerMoves;
 			int playerMoveIndex = combo%numPlayerMoves;
 
@@ -286,15 +273,6 @@ public class GameTreeNode {
 	}
 
 	public double getScore(){
-		/*
-		int totalNumSamples = 0;
-		long totalSumSamples = 0;
-		for (int i=0; i<numPlayerMoves; i++){
-			totalNumSamples += numSamples[i];
-			totalSumSamples += sumSamples[i];
-		}
-		return ((double) totalSumSamples)/totalNumSamples;
-		*/
 		return ((double) sumSamples)/numVisits;
 	}
 
@@ -389,6 +367,19 @@ public class GameTreeNode {
 
 	public int getNumVisits(){
 		return numVisits;
+	}
+
+
+	public static void resetDepthChargeCounter(){
+		GameTreeNode.numDepthCharges = 0;
+	}
+
+	public static int getNumDepthCharges(){
+		return GameTreeNode.numDepthCharges;
+	}
+
+	public static void updateSelectTemperature(){
+		GameTreeNode.selectTemperature = NotABot.timeLeft()/100;
 	}
 
 

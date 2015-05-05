@@ -40,6 +40,10 @@ public abstract class NotABot extends StateMachineGamer{
 		return NotABot.timeout < System.currentTimeMillis();
 	}
 
+	public static double timeLeft(){
+		return Math.max(0, NotABot.timeout-System.currentTimeMillis());
+	}
+
 	/**
 	 * Quick helper methods that return a list of moves
 	 * By default, uses current state and this role

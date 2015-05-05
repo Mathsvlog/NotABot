@@ -49,6 +49,7 @@ public class NotABotMonteCarlo extends NotABot {
 		int numSamples = 0;
 		GameTreeNode.resetDepthChargeCounter();
 		while (!NotABot.hasTimedOut()){
+			GameTreeNode.updateSelectTemperature();
 			tree.runSample();
 			numSamples++;
 		}
