@@ -26,11 +26,12 @@ public class GameTreeNode {
 	private static StateMachine stateMachine;// state machine for the game
 	private static int numNodesCreated=0;
 	private static MoveComparator moveComparator;
+	private static int numDepthCharges = 0;
 
 	MachineState state;// the state this node represents
 	int numMoveCombos;// the number of move combinations
 	GameTreeNode[] children;// array of child nodes for all move combos
-	int terminalGoal;// contains player goal for terminal states
+	int terminalGoal = 0;// contains player goal for terminal states
 	boolean isTerminal;
 	List<Move> playerMoves;
 	int numPlayerMoves;
@@ -38,6 +39,14 @@ public class GameTreeNode {
 
 	int numVisits = 0;
 	long sumSamples = 0;
+
+	public static void resetDepthChargeCounter(){
+		numDepthCharges = 0;
+	}
+
+	public static int getNumDepthCharges(){
+		return numDepthCharges;
+	}
 
 	/**
 	 * Constructor for the initial root of the tree
@@ -146,14 +155,18 @@ public class GameTreeNode {
 	 * Heuristic used during selection phase of MCTS
 	 */
 	double selectFunction(){
-		return (((double) sumSamples)/numVisits) + Math.sqrt(2*Math.log(parent.getNumVisits())/numVisits);
+		//return (((double) sumSamples)/numVisits) + Math.sqrt(2*Math.log(parent.getNumVisits())/numVisits);
+		// TODO implement temperature/simulated annealing
+		return (((double) sumSamples)/numVisits) + 100*Math.sqrt(Math.log(parent.getNumVisits())/numVisits);
 	}
 
 	/**
 	 * Expansion phase of MCTS
 	 */
 	void expandNode(int level){
-		if (isTerminal) return;
+		if (isTerminal){
+			return;
+		}
 
 		for (int i=0; i<numMoveCombos; i++){
 			if (NotABot.hasTimedOut()) break;
@@ -202,6 +215,7 @@ public class GameTreeNode {
 	 */
 	public int runSample(){
 		if (isTerminal){
+			numDepthCharges++;
 			return terminalGoal;
 		}
 
@@ -271,31 +285,6 @@ public class GameTreeNode {
 		return this.state.equals(state);
 	}
 
-	/**
-	 * Compute the best move for the current node
-	 * based on information from the samples run so far
-	 */
-	/*
-	public MoveScore getBestMove(boolean printout){
-		if (printout) System.out.println("SCORE FOR EACH MOVE: ");
-		//List<Move> moves = stateMachine.getLegalMoves(state, roles.get(playerIndex));
-		Move bestMove = null;
-		double bestScore = 0;
-		for (int i=0; i<numPlayerMoves; i++){
-			if (numSamples[i] > 0){
-				double score = ((double) sumSamples[i])/numSamples[i];
-				if (score > bestScore){
-					bestScore = score;
-					bestMove = playerMoves.get(i);
-				}
-				if (printout) System.out.println("\t" + playerMoves.get(i) + " - " + numSamples[i] + " - " + score);
-			}
-		}
-
-		return new MoveScore(bestScore);
-	}
-	*/
-
 	public double getScore(){
 		/*
 		int totalNumSamples = 0;
@@ -360,26 +349,38 @@ public class GameTreeNode {
 						break;
 					}
 				}
+				/*
 				else{
 					System.out.println("NULL CHILD DURING MINIMAX");
 				}
+				*/
 
 			}
-			if (isFirst) System.out.println(move + " : " + worstBest.getScore());
+
+			if (isFirst){
+				System.out.println(move + " : " + ((worstBest==null)?"?":worstBest.getScore()));
+			}
 
 			// update best outcome of the worst outcomes
-			// TODO null checking for worstBest
-			if (bestWorst == null || bestWorst.getScore() < worstBest.getScore()){
-				bestWorst = worstBest;
-				bestWorst.updateMove(move);
-			}
+			if (worstBest != null){
+				if (bestWorst == null || bestWorst.getScore() < worstBest.getScore()){
+					bestWorst = worstBest;
+					bestWorst.updateMove(move);
+				}
 
-			// max node
-			alpha = Math.max(alpha, bestWorst.getScore());
-			if (alpha >= beta){
-				//System.out.println("MAX NODE BREAK");
-				break;
+				// max node
+				alpha = Math.max(alpha, bestWorst.getScore());
+				if (alpha >= beta){
+					//System.out.println("MAX NODE BREAK");
+					break;
+				}
 			}
+		}
+
+		if (bestWorst == null){
+			System.out.println("MINIMAX FOUND NODE WITH ALL NULL CHILDREN");
+			bestWorst = new MoveScore(0);
+			bestWorst.updateMove(playerMoves.get(rand.nextInt(playerMoves.size())));
 		}
 
 		return bestWorst;

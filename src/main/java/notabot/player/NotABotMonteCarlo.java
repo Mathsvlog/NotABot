@@ -2,6 +2,7 @@ package notabot.player;
 
 import notabot.NotABot;
 import notabot.gametree.GameTree;
+import notabot.gametree.GameTreeNode;
 
 import org.ggp.base.util.statemachine.Move;
 import org.ggp.base.util.statemachine.exceptions.GoalDefinitionException;
@@ -46,11 +47,14 @@ public class NotABotMonteCarlo extends NotABot {
 	private void sampleUntilTimeout(){
 		// run samples until time runs out
 		int numSamples = 0;
+		GameTreeNode.resetDepthChargeCounter();
 		while (!NotABot.hasTimedOut()){
 			tree.runSample();
 			numSamples++;
 		}
 		System.out.println("NUM SAMPLES RAN: " + numSamples);
+		System.out.println("NUM DEPTH CHARGES: " + GameTreeNode.getNumDepthCharges());
+
 	}
 
 	private void previewBestMove(){
