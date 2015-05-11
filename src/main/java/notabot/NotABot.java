@@ -2,6 +2,8 @@ package notabot;
 
 import java.util.List;
 
+import notabot.propnet.NotABotPropNetStateMachine;
+
 import org.ggp.base.player.gamer.exception.GamePreviewException;
 import org.ggp.base.player.gamer.statemachine.StateMachineGamer;
 import org.ggp.base.util.game.Game;
@@ -13,7 +15,6 @@ import org.ggp.base.util.statemachine.cache.CachedStateMachine;
 import org.ggp.base.util.statemachine.exceptions.GoalDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.MoveDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
-import org.ggp.base.util.statemachine.implementation.prover.ProverStateMachine;
 
 public abstract class NotABot extends StateMachineGamer{
 
@@ -66,7 +67,8 @@ public abstract class NotABot extends StateMachineGamer{
 
 	@Override
 	public StateMachine getInitialStateMachine() {
-		return new CachedStateMachine(new ProverStateMachine());
+		return new CachedStateMachine(new NotABotPropNetStateMachine());
+		//return new CachedStateMachine(new ProverStateMachine());
 	}
 
 	@Override
