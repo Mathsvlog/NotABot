@@ -15,12 +15,12 @@ import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
 
 public class NotABotDepthLimitedHeuristic extends NotABot {
 
-	private final int MAX_LEVEL = 1;
+	private final int MAX_LEVEL = 2;
 	private final double WEIGHT_ONE_STEP = 0;
 	private final double WEIGHT_GOAL_PROX = 0;
 	private final double WEIGHT_OPP_ONE_STEP = 0;
 	private final double WEIGHT_MONTE_CARLO = 1;
-	private final int MONTE_CARLO_SAMPLES = 5;
+	private final int MONTE_CARLO_SAMPLES = 10;
 
 
 	private final double WEIGHT_TOTAL = WEIGHT_ONE_STEP+WEIGHT_GOAL_PROX+WEIGHT_OPP_ONE_STEP+WEIGHT_MONTE_CARLO;

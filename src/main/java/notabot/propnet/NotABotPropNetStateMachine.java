@@ -78,10 +78,10 @@ public class NotABotPropNetStateMachine extends StateMachine{
 		setPropNetState(state);
 		for (Proposition p: propNet.getGoalPropositions().get(role)){
 			if (propMark(p)){
-				return Integer.parseInt(p.getName().getName().getValue());
+				return Integer.parseInt(p.getName().getBody().get(1).toString());
 			}
 		}
-		return -1;
+		return 0;
 	}
 
 	/**
@@ -103,8 +103,17 @@ public class NotABotPropNetStateMachine extends StateMachine{
 	@Override
 	public List<Move> getLegalMoves(MachineState state, Role role)
 	throws MoveDefinitionException {
-		// TODO: Compute legal moves.
-		return null;
+		// Done
+		setPropNetState(state);
+		List<Move> moves = new ArrayList<Move>();
+
+		for (Proposition p: propNet.getLegalPropositions().get(role)){
+			if (propMark(p)){
+				moves.add(new Move(p.getName().getBody().get(1)));
+			}
+		}
+
+		return moves;
 	}
 
 	/**
@@ -238,7 +247,8 @@ public class NotABotPropNetStateMachine extends StateMachine{
 			p.setValue(false);
 		}
 		// TODO clearing inputs might not be necessary
-		//for (Proposition p: propNet.getInputPropositions().values()){p.setValue(false);}
+		for (Proposition p: propNet.getInputPropositions().values()){p.setValue(false);}
+		propNet.getInitProposition().setValue(false);
 	}
 
 	private void markBases(Set<GdlSentence> sentences){
@@ -248,9 +258,17 @@ public class NotABotPropNetStateMachine extends StateMachine{
 	}
 
 	private void markActions(List<Move> moves){
-		for (Move m: moves){
-			propNet.getInputPropositions().get(m.getContents().toSentence()).setValue(true);
+
+		for (int i=0; i<getRoles().size(); i++){
+			Move m = moves.get(i);
+			for (Proposition legal: propNet.getLegalPropositions().get(getRoles().get(i))){
+				if (legal.getName().get(1).equals(m.getContents())){
+					Proposition does = propNet.getLegalInputMap().get(legal);
+					propNet.getInputPropositions().get(does.getName()).setValue(true);
+				}
+			}
 		}
+
 	}
 
 	private boolean propMark(Component c){
@@ -303,9 +321,12 @@ public class NotABotPropNetStateMachine extends StateMachine{
 		return new MachineState(contents);
 	}
 
+
 	private MachineState computeNextState(){
-		Proposition[] bases = (Proposition[]) propNet.getBasePropositions().values().toArray();
+		int n = propNet.getBasePropositions().values().size();
+		Proposition[] bases = propNet.getBasePropositions().values().toArray(new Proposition[n]);
 		boolean[] vals = new boolean[bases.length];
+
 
 		for (int i=0; i<bases.length; i++){
 			vals[i] = propMark(bases[i].getSingleInput());

@@ -221,11 +221,13 @@ public class GameTreeNode {
 	}
 
 	public GameTreeNode getChildWithState(MachineState state){
+
 		for (int i=0; i<numMoveCombos; i++){
 			if (children[i] != null && children[i].isState(state)){
 				System.out.println("FOUND CHILD NODE IN TRAVERSE");
 				return children[i];
 			}
+
 		}
 		for (int i=0; i<numMoveCombos; i++){
 			if (children[i] == null){
