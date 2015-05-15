@@ -127,7 +127,7 @@ public final class Player extends JPanel
 		createButton.doClick();
 		typeComboBox.setSelectedItem("SampleMonteCarloGamer");
 		//typeComboBox.setSelectedItem("Random");
-		createButton.doClick();
+		//createButton.doClick();
 
 	}
 
