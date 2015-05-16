@@ -40,6 +40,8 @@ public class GameTreeNode {
 	int numVisits = 0;
 	long sumSamples = 0;
 
+	int lastSelectMoveIndex;
+
 	/**
 	 * Constructor for the initial root of the tree
 	 */
@@ -102,7 +104,6 @@ public class GameTreeNode {
 		}
 	}
 
-
 	/**
 	 * Selection phase of MCTS
 	 */
@@ -116,6 +117,7 @@ public class GameTreeNode {
 		for (int i=0; i<numMoveCombos; i++){
 			if (children[i] == null){
 				createChild(i);
+				lastSelectMoveIndex = i%numPlayerMoves;
 				return children[i];
 			}
 		}
@@ -123,12 +125,14 @@ public class GameTreeNode {
 		// pick child with best heuristic score
 		double bestScore = 0;
 		GameTreeNode bestNode = this;
+		int bestNodeIndex = 0;
 		Move m = null;
 		for (int i=0; i<numMoveCombos; i++){
 			double currScore = children[i].selectFunction(numVisits);
 			if (currScore > bestScore){
 				bestScore = currScore;
 				bestNode = children[i];
+				bestNodeIndex = i;
 				m = playerMoves.get(i%numPlayerMoves);
 			}
 		}
@@ -137,6 +141,8 @@ public class GameTreeNode {
 			System.out.println("SELECT PHASE RETURNED NULL");
 		}
 		//System.out.println(m.toString() + " : " + (int)bestScore + ", " + (int)bestNode.getScore());
+
+		lastSelectMoveIndex = bestNodeIndex%numPlayerMoves;
 
 		return bestNode;
 	}
@@ -172,7 +178,9 @@ public class GameTreeNode {
 		}
 	}
 
-
+	/**
+	 * Used to compare moves by alphabetical order of move names
+	 */
 	private class MoveComparator implements Comparator<Move>{
 		@Override
 		public int compare(Move m0, Move m1) {
@@ -180,6 +188,9 @@ public class GameTreeNode {
 		}
 	}
 
+	/**
+	 * TODO Unused
+	 */
 	public void buildTree(int expansionDepth){
 		if (isTerminal) return;
 
@@ -196,6 +207,7 @@ public class GameTreeNode {
 			children[i].buildTree(expansionDepth-1);
 		}
 	}
+
 
 	/**
 	 * Run one sample from this node
@@ -220,6 +232,10 @@ public class GameTreeNode {
 		return goal;
 	}
 
+	/**
+	 * Returns the GameTreeNode child of this node whose state
+	 * matches the given state
+	 */
 	public GameTreeNode getChildWithState(MachineState state){
 
 		for (int i=0; i<numMoveCombos; i++){
@@ -243,6 +259,10 @@ public class GameTreeNode {
 		return null;
 	}
 
+	/**
+	 * Computes the move set corresponding to the child index
+	 * and creates the child, computing the corresponding state
+	 */
 	public void createChild(int combo){
 		try {
 			// compute move combo
@@ -270,14 +290,24 @@ public class GameTreeNode {
 		}
 	}
 
+	/**
+	 * Returns true if the given state matches the state of this node
+	 */
 	public boolean isState(MachineState state){
 		return this.state.equals(state);
 	}
 
+	/**
+	 *	Simple metric of average goal value during sampling
+	 */
 	public double getScore(){
+		if (numVisits==0) return 0;
 		return ((double) sumSamples)/numVisits;
 	}
 
+	/**
+	 * Computes best move from this node using MiniMax with Alpha-Beta pruning
+	 */
 	public MoveScore getBestMove(int level, double alpha, double beta, boolean isFirst) throws MoveDefinitionException, TransitionDefinitionException, GoalDefinitionException{
 		// if state is terminal, return goal value of state
 		if (isTerminal){
@@ -366,23 +396,69 @@ public class GameTreeNode {
 		return bestWorst;
 	}
 
-
-	public int getNumVisits(){
-		return numVisits;
-	}
-
-
+	/**
+	 * Resets the depth charge counter to 0
+	 */
 	public static void resetDepthChargeCounter(){
 		GameTreeNode.numDepthCharges = 0;
 	}
 
+	/**
+	 * Returns number of depth charges
+	 */
 	public static int getNumDepthCharges(){
 		return GameTreeNode.numDepthCharges;
 	}
 
+	/**
+	 * Updates the select phase temperature based on the remaining time
+	 */
 	public static void updateSelectTemperature(){
 		GameTreeNode.selectTemperature = NotABot.timeLeft()/100;
 	}
 
+	/**
+	 * Returns number of times this node was visited
+	 */
+	public int getNumVisits(){
+		return numVisits;
+	}
+
+	/**
+	 * Returns state corresponding to this node
+	 */
+	public MachineState getState(){
+		return state;
+	}
+
+	/**
+	 * Returns list of player moves from this node
+	 */
+	public List<Move> getPlayerMoves(){
+		return playerMoves;
+	}
+
+	/**
+	 * Returns the number of child nodes from this node
+	 */
+	public int getNumChildren(){
+		return children.length;
+	}
+
+	/**
+	 * Returns the child corresponding to the given combo index
+	 */
+	public GameTreeNode getChild(int index){
+		if (index<0 || index >= children.length) return null;
+		return children[index];
+	}
+
+	/**
+	 * Used for NotABotTreeVisualizer
+	 * Returns move index corresponding to last selected child
+	 */
+	public int getLastSelectMoveIndex(){
+		return lastSelectMoveIndex;
+	}
 
 }
