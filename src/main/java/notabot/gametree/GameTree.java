@@ -20,7 +20,7 @@ public class GameTree {
 	private final int numRoles;
 	private Move lastMove;
 
-	public static final boolean SHOW_VISUALIZER = true;
+	public static final boolean SHOW_VISUALIZER = false;
 	private final String VIS_FRAME_TITLE = "NotABot Game Tree Visualizer";
 	private final NotABotTreeVisualizer vis;
 	private final JFrame frame;
@@ -44,6 +44,7 @@ public class GameTree {
 		}
 		else{
 			vis = null;
+			frame = null;
 		}
 	}
 

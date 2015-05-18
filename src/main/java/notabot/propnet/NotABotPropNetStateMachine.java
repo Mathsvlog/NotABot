@@ -1,11 +1,13 @@
 package notabot.propnet;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Stack;
 
 import org.ggp.base.util.gdl.grammar.Gdl;
 import org.ggp.base.util.gdl.grammar.GdlConstant;
@@ -37,6 +39,9 @@ public class NotABotPropNetStateMachine extends StateMachine{
     /** The player roles */
     private List<Role> roles;
 
+    // mapping from role to relevant moves
+    private Map<Role, Set<Move>> relevantInputMap;
+
     /**
      * Initializes the PropNetStateMachine. You should compute the topological
      * ordering here. Additionally you may compute the initial state here, at
@@ -51,6 +56,11 @@ public class NotABotPropNetStateMachine extends StateMachine{
 		} catch (InterruptedException e) {
 			throw new RuntimeException(e);
 		}
+        relevantInputMap = findRelevantMoves();
+    }
+
+    public Map<Role, Set<Move>> getRelevantInputMap(){
+    	return relevantInputMap;
     }
 
 	/**
@@ -295,7 +305,7 @@ public class NotABotPropNetStateMachine extends StateMachine{
 			return false;
 		}
 		else if (c instanceof Constant){
-			System.out.println("NotABotPropNetStateMachine found Constant during propMark");
+			//System.out.println("NotABotPropNetStateMachine found Constant during propMark");
 			return c.getValue();
 		}
 		else if (c instanceof Not){
@@ -338,5 +348,51 @@ public class NotABotPropNetStateMachine extends StateMachine{
 		return computeCurrentState();
 	}
 
+
+
+	private Map<Role, Set<Move>> findRelevantMoves(){
+		Set<Proposition> relevantInputs = new HashSet<Proposition>();
+		Set<Component> visited = new HashSet<Component>();
+		Stack<Component> stack = new Stack<Component>();
+
+		stack.add(propNet.getTerminalProposition());
+		visited.add(propNet.getTerminalProposition());
+
+		while (!stack.isEmpty()){
+			Component curr = stack.pop();
+			for (Component comp: curr.getInputs()){
+				// add unvisited components to stack
+				if (!visited.contains(comp)){
+					stack.add(comp);
+					visited.add(comp);
+
+					// add input proposition to set
+					if (comp instanceof Proposition && comp.getInputs().size()==0){
+						relevantInputs.add((Proposition) comp);
+						//System.out.println(comp);
+					}
+				}
+			}
+		}
+
+		relevantInputs.remove(propNet.getInitProposition());
+		// create mapping from role to set of relevant moves
+		Map<Role, Set<Move>> relevantInputMap = new HashMap<Role, Set<Move>>();
+		for (Role role: getRoles()){
+			relevantInputMap.put(role, new HashSet<Move>());
+
+			for (Proposition p: propNet.getLegalPropositions().get(role)){
+				Proposition does = propNet.getLegalInputMap().get(p);
+				if (relevantInputs.contains(does)){
+					Move m = new Move(p.getName().getBody().get(1));
+					//System.out.println(role);
+					//System.out.println(m);
+					relevantInputMap.get(role).add(m);
+				}
+			}
+		}
+
+		return relevantInputMap;
+	}
 
 }

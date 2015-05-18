@@ -5,14 +5,17 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 
 import notabot.MoveScore;
 import notabot.NotABot;
+import notabot.propnet.NotABotPropNetStateMachine;
 
 import org.ggp.base.util.statemachine.MachineState;
 import org.ggp.base.util.statemachine.Move;
 import org.ggp.base.util.statemachine.Role;
 import org.ggp.base.util.statemachine.StateMachine;
+import org.ggp.base.util.statemachine.cache.CachedStateMachine;
 import org.ggp.base.util.statemachine.exceptions.GoalDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.MoveDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
@@ -23,11 +26,14 @@ public class GameTreeNode {
 	private static int numRoles;// number of roles for the game
 	private static List<Role> roles;
 	private static int playerIndex;// this player's role index
-	private static StateMachine stateMachine;// state machine for the game
 	private static int numNodesCreated=0;
 	private static MoveComparator moveComparator;// used to sort move lists
 	private static int numDepthCharges = 0;// used to count number of paths sampled during turn
 	private static double selectTemperature;
+
+	private static StateMachine stateMachine;// state machine for the game
+	private static NotABotPropNetStateMachine propNetStateMachine;
+	private static boolean isPropNet = false;
 
 	MachineState state;// the state this node represents
 	int numMoveCombos;// the number of move combinations
@@ -52,6 +58,16 @@ public class GameTreeNode {
 		GameTreeNode.stateMachine = stateMachine;
 		GameTreeNode.playerIndex = playerIndex;
 		GameTreeNode.moveComparator = new MoveComparator();
+
+		if (stateMachine instanceof CachedStateMachine){
+			StateMachine backing = ((CachedStateMachine) stateMachine).getBackingStateMachine();
+			GameTreeNode.isPropNet = (backing instanceof NotABotPropNetStateMachine);
+			if (GameTreeNode.isPropNet){
+				propNetStateMachine = (NotABotPropNetStateMachine)backing;
+			}
+		}
+		System.out.println("ISPROPNET");
+		System.out.println(GameTreeNode.isPropNet);
 		constructGameTreeNode(state);
 	}
 
@@ -82,6 +98,23 @@ public class GameTreeNode {
 				// initialze array of child nodes
 				children = new GameTreeNode[numMoveCombos];
 				playerMoves = new ArrayList<Move>(stateMachine.getLegalMoves(state, roles.get(playerIndex)));
+
+				// filters out irrelevant moves; if no relevant moves, leaves one move
+				if (isPropNet){
+					Set<Move> relevantMoves = propNetStateMachine.getRelevantInputMap().get(roles.get(playerIndex));
+
+					//for (Move move: playerMoves){
+					for (int i=playerMoves.size()-1; i>=0; i--){
+						Move move = playerMoves.get(i);
+						if (playerMoves.size()==1){
+							break;
+						}
+						if (!relevantMoves.contains(move)){
+							playerMoves.remove(move);
+						}
+					}
+				}
+
 				numPlayerMoves = playerMoves.size();
 
 				Collections.sort(playerMoves, moveComparator);
