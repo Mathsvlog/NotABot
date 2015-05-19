@@ -2,38 +2,34 @@ package notabot.gametree;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
-import java.util.Random;
 import java.util.Set;
 
 import notabot.MoveScore;
 import notabot.NotABot;
-import notabot.propnet.NotABotPropNetStateMachine;
 
 import org.ggp.base.util.statemachine.MachineState;
 import org.ggp.base.util.statemachine.Move;
 import org.ggp.base.util.statemachine.Role;
-import org.ggp.base.util.statemachine.StateMachine;
-import org.ggp.base.util.statemachine.cache.CachedStateMachine;
 import org.ggp.base.util.statemachine.exceptions.GoalDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.MoveDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
 
 public class GameTreeNode {
 
+	/*
 	private static Random rand = new Random();
-	private static int numRoles;// number of roles for the game
-	private static List<Role> roles;
-	private static int playerIndex;// this player's role index
+	protected static int numRoles;// number of roles for the game
+	protected static List<Role> roles;
+	protected static int playerIndex;// this player's role index
 	private static int numNodesCreated=0;
 	private static MoveComparator moveComparator;// used to sort move lists
 	private static int numDepthCharges = 0;// used to count number of paths sampled during turn
 	private static double selectTemperature;
+	protected static StateMachine stateMachine;// state machine for the game
+	*/
 
-	private static StateMachine stateMachine;// state machine for the game
-	private static NotABotPropNetStateMachine propNetStateMachine;
-	private static boolean isPropNet = false;
+	protected final GameTree TREE;
 
 	MachineState state;// the state this node represents
 	int numMoveCombos;// the number of move combinations
@@ -49,67 +45,47 @@ public class GameTreeNode {
 	int lastSelectMoveIndex;
 
 	/**
-	 * Constructor for the initial root of the tree
-	 */
-	public GameTreeNode(MachineState state, StateMachine stateMachine, int playerIndex){
-
-		GameTreeNode.roles = stateMachine.getRoles();
-		GameTreeNode.numRoles = roles.size();
-		GameTreeNode.stateMachine = stateMachine;
-		GameTreeNode.playerIndex = playerIndex;
-		GameTreeNode.moveComparator = new MoveComparator();
-
-		if (stateMachine instanceof CachedStateMachine){
-			StateMachine backing = ((CachedStateMachine) stateMachine).getBackingStateMachine();
-			GameTreeNode.isPropNet = (backing instanceof NotABotPropNetStateMachine);
-			if (GameTreeNode.isPropNet){
-				propNetStateMachine = (NotABotPropNetStateMachine)backing;
-			}
-		}
-		System.out.println("ISPROPNET");
-		System.out.println(GameTreeNode.isPropNet);
-		constructGameTreeNode(state);
-	}
-
-	/**
 	 * Constructor for any state except the initial state
 	 */
-	public GameTreeNode(MachineState state, GameTreeNode parent){
-		constructGameTreeNode(state);
+	public GameTreeNode(MachineState state, GameTree gameTree){
+		this(state, gameTree, null);
+	}
+
+	protected GameTreeNode(MachineState state, GameTree gameTree, Set<Move> validMoves){
+		TREE = gameTree;
+		constructGameTreeNode(state, validMoves);
 	}
 
 	/**
 	 * Constructor helper for GameTreeNode
 	 */
-	private void constructGameTreeNode(MachineState state){
-		numNodesCreated++;
+	private void constructGameTreeNode(MachineState state, Set<Move> validMoves){
 		this.state = state;
-		isTerminal = stateMachine.isTerminal(state);
+		isTerminal = TREE.stateMachine.isTerminal(state);
 
 		// If not terminal
 		if (!isTerminal){
 			// compute the number of move combinations possible
 			numMoveCombos = 1;
 			try{
-				for (Role role: stateMachine.getRoles()){
-					List<Move> currMoves = stateMachine.getLegalMoves(state, role);
+				for (Role role: TREE.stateMachine.getRoles()){
+					List<Move> currMoves = TREE.stateMachine.getLegalMoves(state, role);
 					numMoveCombos *= currMoves.size();
 				}
+
 				// initialze array of child nodes
 				children = new GameTreeNode[numMoveCombos];
-				playerMoves = new ArrayList<Move>(stateMachine.getLegalMoves(state, roles.get(playerIndex)));
+				playerMoves = new ArrayList<Move>(TREE.stateMachine.getLegalMoves(state, TREE.roles.get(TREE.playerIndex)));
 
-				// filters out irrelevant moves; if no relevant moves, leaves one move
-				if (isPropNet){
-					Set<Move> relevantMoves = propNetStateMachine.getRelevantInputMap().get(roles.get(playerIndex));
+				// filters out irrelevant moves
+				if (validMoves != null){
 
-					//for (Move move: playerMoves){
 					for (int i=playerMoves.size()-1; i>=0; i--){
 						Move move = playerMoves.get(i);
 						if (playerMoves.size()==1){
 							break;
 						}
-						if (!relevantMoves.contains(move)){
+						if (!validMoves.contains(move)){
 							playerMoves.remove(move);
 						}
 					}
@@ -117,7 +93,7 @@ public class GameTreeNode {
 
 				numPlayerMoves = playerMoves.size();
 
-				Collections.sort(playerMoves, moveComparator);
+				Collections.sort(playerMoves, TREE.moveComparator);
 			}
 			catch (MoveDefinitionException e){
 				e.printStackTrace();
@@ -128,13 +104,14 @@ public class GameTreeNode {
 		else{
 			// compute goal for terminal nodes
 			try {
-				terminalGoal = stateMachine.getGoal(state, roles.get(playerIndex));
+				terminalGoal = TREE.stateMachine.getGoal(state, TREE.roles.get(TREE.playerIndex));
 			}
 			catch (GoalDefinitionException e) {
 				e.printStackTrace();
 				terminalGoal = 0;
 			}
 		}
+
 	}
 
 	/**
@@ -184,7 +161,7 @@ public class GameTreeNode {
 	 * Heuristic used during selection phase of MCTS
 	 */
 	double selectFunction(int parentNumVisits){
-		return getScore() + GameTreeNode.selectTemperature*Math.sqrt(Math.log(parentNumVisits)/numVisits);
+		return getScore() + TREE.selectTemperature*Math.sqrt(Math.log(parentNumVisits)/numVisits);
 	}
 
 	/**
@@ -214,12 +191,14 @@ public class GameTreeNode {
 	/**
 	 * Used to compare moves by alphabetical order of move names
 	 */
+	/*
 	private class MoveComparator implements Comparator<Move>{
 		@Override
 		public int compare(Move m0, Move m1) {
 			return m0.toString().compareTo(m1.toString());
 		}
 	}
+	*/
 
 	/**
 	 * TODO Unused
@@ -248,11 +227,11 @@ public class GameTreeNode {
 	 */
 	public int runSample(){
 		if (isTerminal){
-			GameTreeNode.numDepthCharges++;
+			TREE.numDepthCharges++;
 			return terminalGoal;
 		}
 
-		int combo = rand.nextInt(numMoveCombos);
+		int combo = TREE.rand.nextInt(numMoveCombos);
 
 		if (children[combo] == null){
 			createChild(combo);
@@ -273,7 +252,7 @@ public class GameTreeNode {
 
 		for (int i=0; i<numMoveCombos; i++){
 			if (children[i] != null && children[i].isState(state)){
-				System.out.println("FOUND CHILD NODE IN TRAVERSE");
+				//System.out.println("FOUND CHILD NODE IN TRAVERSE");
 				return children[i];
 			}
 
@@ -282,7 +261,7 @@ public class GameTreeNode {
 			if (children[i] == null){
 				createChild(i);
 				if (children[i].isState(state)){
-					System.out.println("CREATED CHILD IN TRAVERSE");
+					//System.out.println("CREATED CHILD IN TRAVERSE");
 					return children[i];
 				}
 			}
@@ -304,9 +283,9 @@ public class GameTreeNode {
 			int playerMoveIndex = combo%numPlayerMoves;
 
 			// get each opponent's move for current combination
-			for (int r = 0; r < numRoles; r++) {
-				if (r!=playerIndex){
-					List<Move> currMoves = stateMachine.getLegalMoves(state, roles.get(r));
+			for (int r = 0; r < TREE.numRoles; r++) {
+				if (r != TREE.playerIndex){
+					List<Move> currMoves = TREE.stateMachine.getLegalMoves(state, TREE.roles.get(r));
 					moveCombo.add(currMoves.get((combo/divisor) % currMoves.size()));
 					divisor *= currMoves.size();
 				}
@@ -316,7 +295,7 @@ public class GameTreeNode {
 			}
 
 			// create child node
-			children[combo] = new GameTreeNode(stateMachine.getNextState(state, moveCombo), this);
+			children[combo] = new GameTreeNode(TREE.stateMachine.getNextState(state, moveCombo), TREE);
 		}
 		catch (MoveDefinitionException | TransitionDefinitionException e) {
 			e.printStackTrace();
@@ -423,32 +402,13 @@ public class GameTreeNode {
 		if (bestWorst == null){
 			System.out.println("MINIMAX FOUND NODE WITH ALL NULL CHILDREN");
 			bestWorst = new MoveScore(0);
-			bestWorst.updateMove(playerMoves.get(rand.nextInt(playerMoves.size())));
+			bestWorst.updateMove(playerMoves.get(TREE.rand.nextInt(playerMoves.size())));
 		}
 
 		return bestWorst;
 	}
 
-	/**
-	 * Resets the depth charge counter to 0
-	 */
-	public static void resetDepthChargeCounter(){
-		GameTreeNode.numDepthCharges = 0;
-	}
 
-	/**
-	 * Returns number of depth charges
-	 */
-	public static int getNumDepthCharges(){
-		return GameTreeNode.numDepthCharges;
-	}
-
-	/**
-	 * Updates the select phase temperature based on the remaining time
-	 */
-	public static void updateSelectTemperature(){
-		GameTreeNode.selectTemperature = NotABot.timeLeft()/100;
-	}
 
 	/**
 	 * Returns number of times this node was visited

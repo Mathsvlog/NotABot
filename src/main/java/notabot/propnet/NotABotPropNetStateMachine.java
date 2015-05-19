@@ -40,7 +40,7 @@ public class NotABotPropNetStateMachine extends StateMachine{
     private List<Role> roles;
 
     // mapping from role to relevant moves
-    private Map<Role, Set<Move>> relevantInputMap;
+    private List<Map<Role, Set<Move>>> relevantInputMap;
 
     /**
      * Initializes the PropNetStateMachine. You should compute the topological
@@ -59,8 +59,12 @@ public class NotABotPropNetStateMachine extends StateMachine{
         relevantInputMap = findRelevantMoves();
     }
 
-    public Map<Role, Set<Move>> getRelevantInputMap(){
-    	return relevantInputMap;
+    public synchronized Set<Move> getRelevantSubgameMoves(int subgameIndex, Role role){
+    	return relevantInputMap.get(subgameIndex).get(role);
+    }
+
+    public synchronized int getNumSubgames(){
+    	return relevantInputMap.size();
     }
 
 	/**
@@ -68,7 +72,7 @@ public class NotABotPropNetStateMachine extends StateMachine{
 	 * of the terminal proposition for the state.
 	 */
 	@Override
-	public boolean isTerminal(MachineState state) {
+	public synchronized boolean isTerminal(MachineState state) {
 		// Done
 		setPropNetState(state);
 		return propMark(propNet.getTerminalProposition());
@@ -82,7 +86,7 @@ public class NotABotPropNetStateMachine extends StateMachine{
 	 * GoalDefinitionException because the goal is ill-defined.
 	 */
 	@Override
-	public int getGoal(MachineState state, Role role)
+	public synchronized int getGoal(MachineState state, Role role)
 	throws GoalDefinitionException {
 		// Done
 		setPropNetState(state);
@@ -100,7 +104,7 @@ public class NotABotPropNetStateMachine extends StateMachine{
 	 * and then computing the resulting state.
 	 */
 	@Override
-	public MachineState getInitialState() {
+	public synchronized MachineState getInitialState() {
 		// Done
 		clearPropNet();
 		propNet.getInitProposition().setValue(true);
@@ -111,7 +115,7 @@ public class NotABotPropNetStateMachine extends StateMachine{
 	 * Computes the legal moves for role in state.
 	 */
 	@Override
-	public List<Move> getLegalMoves(MachineState state, Role role)
+	public synchronized List<Move> getLegalMoves(MachineState state, Role role)
 	throws MoveDefinitionException {
 		// Done
 		setPropNetState(state);
@@ -130,7 +134,7 @@ public class NotABotPropNetStateMachine extends StateMachine{
 	 * Computes the next state given state and the list of moves.
 	 */
 	@Override
-	public MachineState getNextState(MachineState state, List<Move> moves)
+	public synchronized MachineState getNextState(MachineState state, List<Move> moves)
 	throws TransitionDefinitionException {
 		// Done
 		setPropNetState(state, moves);
@@ -151,7 +155,7 @@ public class NotABotPropNetStateMachine extends StateMachine{
 	 *
 	 * @return The order in which the truth values of propositions need to be set.
 	 */
-	public List<Proposition> getOrdering()
+	public synchronized List<Proposition> getOrdering()
 	{
 	    // List to contain the topological ordering.
 	    List<Proposition> order = new LinkedList<Proposition>();
@@ -169,7 +173,7 @@ public class NotABotPropNetStateMachine extends StateMachine{
 
 	/* Already implemented for you */
 	@Override
-	public List<Role> getRoles() {
+	public synchronized List<Role> getRoles() {
 		return roles;
 	}
 
@@ -204,7 +208,7 @@ public class NotABotPropNetStateMachine extends StateMachine{
 	 * @param p
 	 * @return a PropNetMove
 	 */
-	public static Move getMoveFromProposition(Proposition p)
+	public synchronized static Move getMoveFromProposition(Proposition p)
 	{
 		return new Move(p.getName().get(1));
 	}
@@ -227,7 +231,7 @@ public class NotABotPropNetStateMachine extends StateMachine{
 	 * You need not use this method!
 	 * @return PropNetMachineState
 	 */
-	public MachineState getStateFromBase()
+	public synchronized MachineState getStateFromBase()
 	{
 		Set<GdlSentence> contents = new HashSet<GdlSentence>();
 		for (Proposition p : propNet.getBasePropositions().values())
@@ -348,15 +352,13 @@ public class NotABotPropNetStateMachine extends StateMachine{
 		return computeCurrentState();
 	}
 
-
-
-	private Map<Role, Set<Move>> findRelevantMoves(){
+	private Set<Proposition> findSubgameInputs(Proposition start){
 		Set<Proposition> relevantInputs = new HashSet<Proposition>();
 		Set<Component> visited = new HashSet<Component>();
 		Stack<Component> stack = new Stack<Component>();
 
-		stack.add(propNet.getTerminalProposition());
-		visited.add(propNet.getTerminalProposition());
+		stack.add(start);
+		visited.add(start);
 
 		while (!stack.isEmpty()){
 			Component curr = stack.pop();
@@ -376,23 +378,78 @@ public class NotABotPropNetStateMachine extends StateMachine{
 		}
 
 		relevantInputs.remove(propNet.getInitProposition());
-		// create mapping from role to set of relevant moves
-		Map<Role, Set<Move>> relevantInputMap = new HashMap<Role, Set<Move>>();
-		for (Role role: getRoles()){
-			relevantInputMap.put(role, new HashSet<Move>());
+		return relevantInputs;
+	}
 
+	/**
+	 * The list indexes by subgame (subterminal node)
+	 * The mapping is from role to set of moves relevant to that subgame
+	 */
+	private List<Map<Role, Set<Move>>> findRelevantMoves(){
+		Set<Proposition> subterminalProps = new HashSet<Proposition>();
+		Component terminalInput = propNet.getTerminalProposition().getSingleInput();
+
+		// TODO keep searching until hit non-OR
+		// compute list of subterminal nodes
+		if (terminalInput instanceof Or){
+			for (Component input: terminalInput.getInputs()){
+				if (input instanceof Proposition){
+					subterminalProps.add((Proposition)input);
+				}
+				else if (input instanceof Not && input.getSingleInput() instanceof Proposition){
+					subterminalProps.add((Proposition)input.getSingleInput());
+				}
+				else{
+					System.out.println("STRANGE COMPONENT AS SUBTERMINAL: " + input);
+				}
+			}
+		}
+		else{
+			subterminalProps.add(propNet.getTerminalProposition());
+		}
+
+		// finds inputs for each subterminal
+		List<Set<Proposition>> subgameInputs = new ArrayList<Set<Proposition>>();
+		for (Proposition start: subterminalProps){
+			subgameInputs.add(findSubgameInputs(start));
+		}
+
+		// TODO maybe remove matching subgames
+
+		// initializes all subgame maps
+		List<Map<Role, Set<Move>>> subgameInputMaps = new ArrayList<Map<Role, Set<Move>>>();
+		for (int i=0; i<subgameInputs.size(); i++){
+			subgameInputMaps.add(new HashMap<Role, Set<Move>>());
+			for (Role role: getRoles()){
+				subgameInputMaps.get(i).put(role, new HashSet<Move>());
+			}
+		}
+
+		// consider all legal moves for each role
+		for (Role role: getRoles()){
 			for (Proposition p: propNet.getLegalPropositions().get(role)){
 				Proposition does = propNet.getLegalInputMap().get(p);
-				if (relevantInputs.contains(does)){
-					Move m = new Move(p.getName().getBody().get(1));
-					//System.out.println(role);
-					//System.out.println(m);
-					relevantInputMap.get(role).add(m);
+
+				// if a move is in any subgames, add it to corresponding map
+				for (int i=0; i<subgameInputs.size(); i++){
+					if (subgameInputs.get(i).contains(does)){
+						Move m = new Move(p.getName().getBody().get(1));
+						subgameInputMaps.get(i).get(role).add(m);
+					}
 				}
 			}
 		}
 
-		return relevantInputMap;
+		System.out.println();
+		for (int i=0; i<subgameInputMaps.size(); i++){
+			System.out.println("\nSUBGAME: " + i);
+			for (Role role: getRoles()){
+				System.out.println("\tROLE: "+role + " - NUM MOVES: " + subgameInputMaps.get(i).get(role).size());
+			}
+		}
+		System.out.println();
+
+		return subgameInputMaps;
 	}
 
 }

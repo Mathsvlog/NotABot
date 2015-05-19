@@ -1,8 +1,13 @@
 package notabot.gametree;
 
+import java.util.Comparator;
+import java.util.List;
+import java.util.Random;
+
 import javax.swing.JFrame;
 
 import notabot.MoveScore;
+import notabot.NotABot;
 import notabot.visualizer.NotABotTreeVisualizer;
 
 import org.ggp.base.util.statemachine.MachineState;
@@ -15,21 +20,32 @@ import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
 
 public class GameTree {
 
-	private StateMachine stateMachine;
-	private GameTreeNode root;
-	private final int numRoles;
-	private Move lastMove;
+	protected volatile StateMachine stateMachine;
+	protected GameTreeNode root;
+	protected final int numRoles;
+	protected Move lastMove;
 
 	public static final boolean SHOW_VISUALIZER = false;
 	private final String VIS_FRAME_TITLE = "NotABot Game Tree Visualizer";
 	private final NotABotTreeVisualizer vis;
 	private final JFrame frame;
 
+	// info for GameTreeNodes to access
+	final Random rand = new Random();
+	final List<Role> roles;
+	final int playerIndex;// this player's role index
+	final MoveComparator moveComparator;// used to sort move lists
+	int numDepthCharges = 0;// used to count number of paths sampled during turn
+	double selectTemperature;
+
 	public GameTree(StateMachine stateMachine, MachineState initialState, Role playerRole){
 		this.stateMachine = stateMachine;
-		int playerIndex = stateMachine.getRoles().indexOf(playerRole);
-		root = new GameTreeNode(initialState, stateMachine, playerIndex);
-		numRoles = stateMachine.getRoles().size();
+		playerIndex = stateMachine.getRoles().indexOf(playerRole);
+		roles = stateMachine.getRoles();
+		numRoles = roles.size();
+		moveComparator = new MoveComparator();
+
+		root = new GameTreeNode(initialState, this);
 
 		if (SHOW_VISUALIZER){
 			System.out.println("BUILD VIS");
@@ -45,6 +61,13 @@ public class GameTree {
 		else{
 			vis = null;
 			frame = null;
+		}
+	}
+
+	private class MoveComparator implements Comparator<Move>{
+		@Override
+		public int compare(Move m0, Move m1) {
+			return m0.toString().compareTo(m1.toString());
 		}
 	}
 
@@ -77,11 +100,17 @@ public class GameTree {
 	 * Computes best move from root using MiniMax with Alpha-Beta pruning
 	 */
 	public Move getBestMove(boolean printout){
+		return getBestMoveScore(printout).getMove();
+	}
+
+	/**
+	 * Computes best move from root using MiniMax with Alpha-Beta pruning
+	 */
+	public MoveScore getBestMoveScore(boolean printout){
 		MoveScore ms;
 		try {
-			ms = root.getBestMove(numRoles, Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY, true);
-			lastMove = ms.getMove();
-			return ms.getMove();
+			ms = root.getBestMove(numRoles, Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY, printout);
+			return ms;
 		}
 		catch (MoveDefinitionException | TransitionDefinitionException | GoalDefinitionException e) {
 			e.printStackTrace();
@@ -89,4 +118,25 @@ public class GameTree {
 		return null;
 	}
 
+
+	/**
+	 * Resets the depth charge counter to 0
+	 */
+	public void resetDepthChargeCounter(){
+		numDepthCharges = 0;
+	}
+
+	/**
+	 * Returns number of depth charges
+	 */
+	public int getNumDepthCharges(){
+		return numDepthCharges;
+	}
+
+	/**
+	 * Updates the select phase temperature based on the remaining time
+	 */
+	public void updateSelectTemperature(){
+		selectTemperature = NotABot.timeLeft()/100;
+	}
 }
