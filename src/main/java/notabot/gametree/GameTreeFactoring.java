@@ -16,13 +16,6 @@ public class GameTreeFactoring extends GameTree {
 			Role playerRole, int subgameIndex) {
 		super(propNet, initialState, playerRole);
 
-		/*
- 		this.stateMachine = stateMachine;
-		int playerIndex = stateMachine.getRoles().indexOf(playerRole);
-		root = new GameTreeNode(initialState, stateMachine, playerIndex);
-		numRoles = stateMachine.getRoles().size();
-		 */
-
 		int playerIndex = stateMachine.getRoles().indexOf(playerRole);
 		VALID_MOVES = propNet.getRelevantSubgameMoves(subgameIndex, playerRole);
 		root = new GameTreeNodeFactoring(initialState, this);

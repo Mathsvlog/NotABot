@@ -37,9 +37,15 @@ public class NotABotMonteCarloFactoring extends NotABot {
 	@Override
 	protected Move getBestMove() throws MoveDefinitionException,
 			TransitionDefinitionException, GoalDefinitionException {
-		// TODO Auto-generated method stub
 
-		for (int i=0; i<numSubgames; i++) trees[i].traverse(getCurrentState());
+		for (int i=0; i<numSubgames; i++){
+			// attempt to traverse tree
+			if (!trees[i].traverse(getCurrentState())){
+				// reset tree if traverse fails due to irrelevant subgame action
+				trees[i] = new GameTreeFactoring(propNet, getCurrentState(), getRole(), i);
+				System.out.println("RESETING GAME TREE ("+i+")");
+			}
+		}
 
 		sampleUntilTimeout();
 
@@ -47,18 +53,12 @@ public class NotABotMonteCarloFactoring extends NotABot {
 
 		for (int i=0; i<numSubgames; i++) {
 			MoveScore moveScore = trees[0].getBestMoveScore(false);
+
 			if (bestMoveScore == null || moveScore.getScore() > bestMoveScore.getScore()){
 				bestMoveScore = moveScore;
 			}
 			System.out.println("BEST MOVE FOR SUBGAME ("+i+"): "+moveScore.getMove() + " : " + moveScore.getScore());
 		}
-		/*
-		Move move = trees[0].getBestMove(true);
-		if (move == null){
-			System.out.println("TREE RETURNED NULL MOVE");
-			move = getStateMachine().getLegalMoves(getCurrentState(), getRole()).get(0);
-		}
-		*/
 		return bestMoveScore.getMove();
 	}
 

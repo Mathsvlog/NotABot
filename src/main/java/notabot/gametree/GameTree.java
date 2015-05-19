@@ -87,13 +87,15 @@ public class GameTree {
 	/**
 	 * Go down the tree by one step
 	 */
-	public void traverse(MachineState newState){
-		if (root.isState(newState)) return;
+	public boolean traverse(MachineState newState){
+		if (root.isState(newState)) return true;
 		root = root.getChildWithState(newState);
+		if (root == null) return false;
 		if (SHOW_VISUALIZER){
 			vis.setRoot(root);
 			if (lastMove != null) frame.setTitle(VIS_FRAME_TITLE + " - Last Move: " +lastMove);
 		}
+		return true;
 	}
 
 	/**

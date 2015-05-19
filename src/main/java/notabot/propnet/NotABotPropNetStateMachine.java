@@ -56,6 +56,7 @@ public class NotABotPropNetStateMachine extends StateMachine{
 		} catch (InterruptedException e) {
 			throw new RuntimeException(e);
 		}
+
         relevantInputMap = findRelevantMoves();
     }
 
@@ -414,6 +415,13 @@ public class NotABotPropNetStateMachine extends StateMachine{
 			subgameInputs.add(findSubgameInputs(start));
 		}
 
+		// remove subgames with empty move sets
+		for (int i=subgameInputs.size()-1; i>=0; i--){
+			if (subgameInputs.get(i).size()==0){
+				subgameInputs.remove(i);
+			}
+		}
+
 		// TODO maybe remove matching subgames
 
 		// initializes all subgame maps
@@ -421,7 +429,8 @@ public class NotABotPropNetStateMachine extends StateMachine{
 		for (int i=0; i<subgameInputs.size(); i++){
 			subgameInputMaps.add(new HashMap<Role, Set<Move>>());
 			for (Role role: getRoles()){
-				subgameInputMaps.get(i).put(role, new HashSet<Move>());
+				Set<Move> initMoves = new HashSet<Move>();
+				subgameInputMaps.get(i).put(role, initMoves);
 			}
 		}
 

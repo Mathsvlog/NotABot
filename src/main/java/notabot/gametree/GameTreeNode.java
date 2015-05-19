@@ -17,18 +17,6 @@ import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
 
 public class GameTreeNode {
 
-	/*
-	private static Random rand = new Random();
-	protected static int numRoles;// number of roles for the game
-	protected static List<Role> roles;
-	protected static int playerIndex;// this player's role index
-	private static int numNodesCreated=0;
-	private static MoveComparator moveComparator;// used to sort move lists
-	private static int numDepthCharges = 0;// used to count number of paths sampled during turn
-	private static double selectTemperature;
-	protected static StateMachine stateMachine;// state machine for the game
-	*/
-
 	protected final GameTree TREE;
 
 	MachineState state;// the state this node represents
