@@ -79,8 +79,6 @@ public class NotABotMonteCarloFactoring extends NotABot {
 						numSamples++;
 					}
 					System.out.println("SUBGAME ("+j+") - SAMPLES ("+numSamples+") - CHARGES ("+trees[j].getNumDepthCharges()+")");
-					//System.out.println("NUM SAMPLES RAN ("+j+"): " + numSamples);
-					//System.out.println("NUM DEPTH CHARGES ("+j+"): " + trees[j].getNumDepthCharges());
 				}
 			};
 		}

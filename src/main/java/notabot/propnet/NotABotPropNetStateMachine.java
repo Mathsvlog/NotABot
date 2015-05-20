@@ -353,14 +353,23 @@ public class NotABotPropNetStateMachine extends StateMachine{
 		return computeCurrentState();
 	}
 
+	/**
+	 * Runs a reverse DFS on the propnet graph, starting from a given start component.
+	 * Returns a set of all input propositions that can affect the value of the start component.
+	 */
 	private Set<Proposition> findSubgameInputs(Component start){
+		// keeps track of relevant input propositions
 		Set<Proposition> relevantInputs = new HashSet<Proposition>();
+		// keeps track of visited components to prevent duplicates
 		Set<Component> visited = new HashSet<Component>();
+		// DFS stack
 		Stack<Component> stack = new Stack<Component>();
 
+		// initialize stack with starting proposition
 		stack.add(start);
 		visited.add(start);
 
+		// run DFS on propnet
 		while (!stack.isEmpty()){
 			Component curr = stack.pop();
 			for (Component comp: curr.getInputs()){
@@ -369,44 +378,33 @@ public class NotABotPropNetStateMachine extends StateMachine{
 					stack.add(comp);
 					visited.add(comp);
 
-					// add input proposition to set
+					// add input propositions to set
 					if (comp instanceof Proposition && comp.getInputs().size()==0){
 						relevantInputs.add((Proposition) comp);
-						//System.out.println(comp);
 					}
 				}
 			}
 		}
 
+		// removes init proposition from list before returning
 		relevantInputs.remove(propNet.getInitProposition());
 		return relevantInputs;
 	}
 
 	/**
-	 * The list indexes by subgame (subterminal node)
-	 * The mapping is from role to set of moves relevant to that subgame
+	 * The list indexes by subgame, found by using findSubgameInputs on subterminal components.
+	 * The mapping is from role to set of moves relevant to that subgame.
 	 */
 	private List<Map<Role, Set<Move>>> findRelevantMoves(){
 		Set<Component> subterminalProps = new HashSet<Component>();
 		Component terminalInput = propNet.getTerminalProposition().getSingleInput();
 
 		// TODO keep searching until hit non-OR
-		// compute list of subterminal nodes
+		// compute list of subterminal components
 		System.out.println("Potential Subterminal Components:");
 		if (terminalInput instanceof Or){
 			for (Component input: terminalInput.getInputs()){
 				System.out.println(input);
-				/*
-				if (input instanceof Proposition){
-					subterminalProps.add((Proposition)input);
-				}
-				else if (input instanceof Not && input.getSingleInput() instanceof Proposition){
-					subterminalProps.add((Proposition)input.getSingleInput());
-				}
-				else{
-					System.out.println("STRANGE COMPONENT AS SUBTERMINAL: " + input);
-				}
-				*/
 				subterminalProps.add(input);
 			}
 		}
@@ -454,6 +452,7 @@ public class NotABotPropNetStateMachine extends StateMachine{
 			}
 		}
 
+		// print out statistics about subgames
 		for (int i=0; i<subgameInputMaps.size(); i++){
 			System.out.println("\nSUBGAME: " + i);
 			for (Role role: getRoles()){
