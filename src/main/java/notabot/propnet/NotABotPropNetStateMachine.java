@@ -353,7 +353,7 @@ public class NotABotPropNetStateMachine extends StateMachine{
 		return computeCurrentState();
 	}
 
-	private Set<Proposition> findSubgameInputs(Proposition start){
+	private Set<Proposition> findSubgameInputs(Component start){
 		Set<Proposition> relevantInputs = new HashSet<Proposition>();
 		Set<Component> visited = new HashSet<Component>();
 		Stack<Component> stack = new Stack<Component>();
@@ -387,13 +387,16 @@ public class NotABotPropNetStateMachine extends StateMachine{
 	 * The mapping is from role to set of moves relevant to that subgame
 	 */
 	private List<Map<Role, Set<Move>>> findRelevantMoves(){
-		Set<Proposition> subterminalProps = new HashSet<Proposition>();
+		Set<Component> subterminalProps = new HashSet<Component>();
 		Component terminalInput = propNet.getTerminalProposition().getSingleInput();
 
 		// TODO keep searching until hit non-OR
 		// compute list of subterminal nodes
+		System.out.println("Potential Subterminal Components:");
 		if (terminalInput instanceof Or){
 			for (Component input: terminalInput.getInputs()){
+				System.out.println(input);
+				/*
 				if (input instanceof Proposition){
 					subterminalProps.add((Proposition)input);
 				}
@@ -403,6 +406,8 @@ public class NotABotPropNetStateMachine extends StateMachine{
 				else{
 					System.out.println("STRANGE COMPONENT AS SUBTERMINAL: " + input);
 				}
+				*/
+				subterminalProps.add(input);
 			}
 		}
 		else{
@@ -411,7 +416,7 @@ public class NotABotPropNetStateMachine extends StateMachine{
 
 		// finds inputs for each subterminal
 		List<Set<Proposition>> subgameInputs = new ArrayList<Set<Proposition>>();
-		for (Proposition start: subterminalProps){
+		for (Component start: subterminalProps){
 			subgameInputs.add(findSubgameInputs(start));
 		}
 
@@ -449,7 +454,6 @@ public class NotABotPropNetStateMachine extends StateMachine{
 			}
 		}
 
-		System.out.println();
 		for (int i=0; i<subgameInputMaps.size(); i++){
 			System.out.println("\nSUBGAME: " + i);
 			for (Role role: getRoles()){
