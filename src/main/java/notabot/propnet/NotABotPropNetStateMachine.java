@@ -57,6 +57,14 @@ public class NotABotPropNetStateMachine extends StateMachine{
 			throw new RuntimeException(e);
 		}
 
+        for (Role r: getRoles()){
+        	System.out.println(r);
+        	for (Proposition p: propNet.getLegalPropositions().get(r)){
+        		System.out.println(p);
+        	}
+        	System.out.println();
+        }
+
         relevantInputMap = findRelevantMoves();
     }
 
@@ -391,6 +399,13 @@ public class NotABotPropNetStateMachine extends StateMachine{
 		return relevantInputs;
 	}
 
+	private boolean setContainsAny(Set<Proposition> a, Set<Proposition> b){
+		for (Object o: a){
+			if (b.contains(o)) return true;
+		}
+		return false;
+	}
+
 	/**
 	 * The list indexes by subgame, found by using findSubgameInputs on subterminal components.
 	 * The mapping is from role to set of moves relevant to that subgame.
@@ -425,7 +440,16 @@ public class NotABotPropNetStateMachine extends StateMachine{
 			}
 		}
 
-		// TODO maybe remove matching subgames
+		// removes subgames with overlapping inputs
+		for (int i=subgameInputs.size()-2; i>=0; i--){
+			for (int j=subgameInputs.size()-1; j>i; j--){
+				if (setContainsAny(subgameInputs.get(i),subgameInputs.get(j))){
+					subgameInputs.get(i).addAll(subgameInputs.get(j));
+					subgameInputs.remove(j);
+					System.out.println("Removed subgame");
+				}
+			}
+		}
 
 		// initializes all subgame maps
 		List<Map<Role, Set<Move>>> subgameInputMaps = new ArrayList<Map<Role, Set<Move>>>();
@@ -436,6 +460,7 @@ public class NotABotPropNetStateMachine extends StateMachine{
 				subgameInputMaps.get(i).put(role, initMoves);
 			}
 		}
+
 
 		// consider all legal moves for each role
 		for (Role role: getRoles()){
