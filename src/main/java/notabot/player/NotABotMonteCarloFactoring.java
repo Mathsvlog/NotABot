@@ -1,10 +1,14 @@
 package notabot.player;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import notabot.MoveScore;
 import notabot.NotABot;
 import notabot.gametree.GameTreeFactoring;
 import notabot.propnet.NotABotPropNetStateMachine;
 
+import org.ggp.base.util.gdl.grammar.GdlTerm;
 import org.ggp.base.util.statemachine.Move;
 import org.ggp.base.util.statemachine.cache.CachedStateMachine;
 import org.ggp.base.util.statemachine.exceptions.GoalDefinitionException;
@@ -38,14 +42,26 @@ public class NotABotMonteCarloFactoring extends NotABot {
 	protected Move getBestMove() throws MoveDefinitionException,
 			TransitionDefinitionException, GoalDefinitionException {
 
-		for (int i=0; i<numSubgames; i++){
-			// attempt to traverse tree
-			if (!trees[i].traverse(getCurrentState())){
-				// reset tree if traverse fails due to irrelevant subgame action
-				trees[i] = new GameTreeFactoring(propNet, getCurrentState(), getRole(), i);
-				System.out.println("RESETING GAME TREE ("+i+")");
+		// TODO SOMEHOW get list of moves performed
+		System.out.println("HISTORY");
+		List<List<GdlTerm>> history = getMatch().getMoveHistory();
+		if (history.size()>0){
+			List<Move> lastMoves = new ArrayList<Move>();
+			for (GdlTerm term: history.get(history.size()-1)){
+				lastMoves.add(new Move(term));
+				System.out.println(new Move(term));
+			}
+
+			for (int i=0; i<numSubgames; i++){
+				// attempt to traverse tree
+				if (!trees[i].traverse(getCurrentState())){
+					// reset tree if traverse fails due to irrelevant subgame action
+					trees[i] = new GameTreeFactoring(propNet, getCurrentState(), getRole(), i);
+					System.out.println("RESETING GAME TREE ("+i+")");
+				}
 			}
 		}
+
 
 		sampleUntilTimeout();
 
@@ -59,8 +75,14 @@ public class NotABotMonteCarloFactoring extends NotABot {
 			}
 			System.out.println("BEST MOVE FOR SUBGAME ("+i+"): "+moveScore.getMove() + " : " + moveScore.getScore());
 		}
+
+		if (bestMoveScore.getMove()==null){
+			return getStateMachine().getLegalMoves(getCurrentState(), getRole()).get(0);
+		}
+
 		return bestMoveScore.getMove();
 	}
+
 
 	private void sampleUntilTimeout(){
 

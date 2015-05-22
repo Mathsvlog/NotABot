@@ -67,6 +67,8 @@ public class GameTree {
 	private class MoveComparator implements Comparator<Move>{
 		@Override
 		public int compare(Move m0, Move m1) {
+			if (m0==null) return 1;
+			if (m1==null) return -1;
 			return m0.toString().compareTo(m1.toString());
 		}
 	}
@@ -90,6 +92,16 @@ public class GameTree {
 	public boolean traverse(MachineState newState){
 		if (root.isState(newState)) return true;
 		root = root.getChildWithState(newState);
+		if (root == null) return false;
+		if (SHOW_VISUALIZER){
+			vis.setRoot(root);
+			if (lastMove != null) frame.setTitle(VIS_FRAME_TITLE + " - Last Move: " +lastMove);
+		}
+		return true;
+	}
+
+	public boolean traverse(List<Move> moves){
+		root = root.getChildWithMoves(moves);
 		if (root == null) return false;
 		if (SHOW_VISUALIZER){
 			vis.setRoot(root);

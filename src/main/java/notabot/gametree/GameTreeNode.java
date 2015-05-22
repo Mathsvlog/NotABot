@@ -3,6 +3,7 @@ package notabot.gametree;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import notabot.MoveScore;
@@ -39,7 +40,7 @@ public class GameTreeNode {
 		this(state, gameTree, null);
 	}
 
-	protected GameTreeNode(MachineState state, GameTree gameTree, Set<Move> validMoves){
+	protected GameTreeNode(MachineState state, GameTree gameTree, Map<Role, Set<Move>> validMoves){
 		TREE = gameTree;
 		constructGameTreeNode(state, validMoves);
 	}
@@ -47,7 +48,7 @@ public class GameTreeNode {
 	/**
 	 * Constructor helper for GameTreeNode
 	 */
-	private void constructGameTreeNode(MachineState state, Set<Move> validMoves){
+	private void constructGameTreeNode(MachineState state, Map<Role, Set<Move>> validMoveMap){
 		this.state = state;
 		isTerminal = TREE.stateMachine.isTerminal(state);
 
@@ -56,30 +57,40 @@ public class GameTreeNode {
 			// compute the number of move combinations possible
 			numMoveCombos = 1;
 			try{
-				for (Role role: TREE.stateMachine.getRoles()){
-					List<Move> currMoves = TREE.stateMachine.getLegalMoves(state, role);
-					numMoveCombos *= currMoves.size();
-				}
-
-				// initialze array of child nodes
-				children = new GameTreeNode[numMoveCombos];
-				playerMoves = new ArrayList<Move>(TREE.stateMachine.getLegalMoves(state, TREE.roles.get(TREE.playerIndex)));
-
-				// filters out irrelevant moves
-				if (validMoves != null){
-
-					for (int i=playerMoves.size()-1; i>=0; i--){
-						Move move = playerMoves.get(i);
-						if (playerMoves.size()==1){
-							break;
-						}
-						if (!validMoves.contains(move)){
-							playerMoves.remove(move);
-						}
+				// no factoring
+				if (validMoveMap == null){
+					for (Role role: TREE.stateMachine.getRoles()){
+						List<Move> currMoves = TREE.stateMachine.getLegalMoves(state, role);
+						numMoveCombos *= currMoves.size();
 					}
+					children = new GameTreeNode[numMoveCombos];
+					playerMoves = new ArrayList<Move>(TREE.stateMachine.getLegalMoves(state, TREE.roles.get(TREE.playerIndex)));
+					numPlayerMoves = playerMoves.size();
 				}
+				// factoring
+				else{
+					Role playerRole = TREE.roles.get(TREE.playerIndex);
 
-				numPlayerMoves = playerMoves.size();
+					for (Role role: TREE.stateMachine.getRoles()){
+						List<Move> currMoves = TREE.stateMachine.getLegalMoves(state, role);
+						Set<Move> validMoves = validMoveMap.get(role);
+						for (int i=0; i<currMoves.size(); i++){
+							Move move = currMoves.get(i);
+							if (!validMoves.contains(move)){
+								currMoves.remove(move);
+							}
+						}
+						currMoves.add(null);
+
+						if (role == playerRole){
+							playerMoves = currMoves;
+							numPlayerMoves = playerMoves.size();
+						}
+
+						numMoveCombos *= currMoves.size();
+					}
+					children = new GameTreeNode[numMoveCombos];
+				}
 
 				Collections.sort(playerMoves, TREE.moveComparator);
 			}
@@ -177,18 +188,6 @@ public class GameTreeNode {
 	}
 
 	/**
-	 * Used to compare moves by alphabetical order of move names
-	 */
-	/*
-	private class MoveComparator implements Comparator<Move>{
-		@Override
-		public int compare(Move m0, Move m1) {
-			return m0.toString().compareTo(m1.toString());
-		}
-	}
-	*/
-
-	/**
 	 * TODO Unused
 	 */
 	public void buildTree(int expansionDepth){
@@ -259,6 +258,11 @@ public class GameTreeNode {
 		return null;
 	}
 
+	public GameTreeNode getChildWithMoves(List<Move> moves){
+		// TODO implement
+		return null;
+	}
+
 	/**
 	 * Computes the move set corresponding to the child index
 	 * and creates the child, computing the corresponding state
@@ -273,6 +277,7 @@ public class GameTreeNode {
 			// get each opponent's move for current combination
 			for (int r = 0; r < TREE.numRoles; r++) {
 				if (r != TREE.playerIndex){
+					// TODO limit these moves to subgame
 					List<Move> currMoves = TREE.stateMachine.getLegalMoves(state, TREE.roles.get(r));
 					moveCombo.add(currMoves.get((combo/divisor) % currMoves.size()));
 					divisor *= currMoves.size();
@@ -330,6 +335,8 @@ public class GameTreeNode {
 			// keeps track of worst outcome with our current move
 			MoveScore worstBest = null;
 			Move move = playerMoves.get(i);
+
+			if (move==null && playerMoves.size()>1) continue;
 
 			double minNodeBeta = beta;//
 			int combo = i;
@@ -441,5 +448,6 @@ public class GameTreeNode {
 	public int getLastSelectMoveIndex(){
 		return lastSelectMoveIndex;
 	}
+
 
 }

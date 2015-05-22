@@ -72,6 +72,11 @@ public class NotABotPropNetStateMachine extends StateMachine{
     	return relevantInputMap.get(subgameIndex).get(role);
     }
 
+    public synchronized Map<Role, Set<Move>> getRelevantSubgameMoves(int subgameIndex){
+    	return relevantInputMap.get(subgameIndex);
+    }
+
+
     public synchronized int getNumSubgames(){
     	return relevantInputMap.size();
     }
@@ -284,10 +289,12 @@ public class NotABotPropNetStateMachine extends StateMachine{
 
 		for (int i=0; i<getRoles().size(); i++){
 			Move m = moves.get(i);
-			for (Proposition legal: propNet.getLegalPropositions().get(getRoles().get(i))){
-				if (legal.getName().get(1).equals(m.getContents())){
-					Proposition does = propNet.getLegalInputMap().get(legal);
-					propNet.getInputPropositions().get(does.getName()).setValue(true);
+			if (m != null){
+				for (Proposition legal: propNet.getLegalPropositions().get(getRoles().get(i))){
+					if (legal.getName().get(1).equals(m.getContents())){
+						Proposition does = propNet.getLegalInputMap().get(legal);
+						propNet.getInputPropositions().get(does.getName()).setValue(true);
+					}
 				}
 			}
 		}
@@ -457,6 +464,7 @@ public class NotABotPropNetStateMachine extends StateMachine{
 			subgameInputMaps.add(new HashMap<Role, Set<Move>>());
 			for (Role role: getRoles()){
 				Set<Move> initMoves = new HashSet<Move>();
+				initMoves.add(null);
 				subgameInputMaps.get(i).put(role, initMoves);
 			}
 		}
