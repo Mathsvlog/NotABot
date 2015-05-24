@@ -42,41 +42,40 @@ public class NotABotMonteCarloFactoring extends NotABot {
 	protected Move getBestMove() throws MoveDefinitionException,
 			TransitionDefinitionException, GoalDefinitionException {
 
-		// TODO SOMEHOW get list of moves performed
-		System.out.println("HISTORY");
+		System.out.println("________________________________________________\n");
+
 		List<List<GdlTerm>> history = getMatch().getMoveHistory();
 		if (history.size()>0){
+			// Get list of moves from last turn
 			List<Move> lastMoves = new ArrayList<Move>();
 			for (GdlTerm term: history.get(history.size()-1)){
 				lastMoves.add(new Move(term));
-				System.out.println(new Move(term));
 			}
 
+			// traverse all trees
 			for (int i=0; i<numSubgames; i++){
-				// attempt to traverse tree
-				if (!trees[i].traverse(getCurrentState())){
-					// reset tree if traverse fails due to irrelevant subgame action
-					trees[i] = new GameTreeFactoring(propNet, getCurrentState(), getRole(), i);
-					System.out.println("RESETING GAME TREE ("+i+")");
-				}
+				trees[i].traverse(lastMoves);
 			}
 		}
 
-
+		// sample trees until timeout
 		sampleUntilTimeout();
 
+		// compute best score among all trees
 		MoveScore bestMoveScore = null;
-
 		for (int i=0; i<numSubgames; i++) {
-			MoveScore moveScore = trees[0].getBestMoveScore(false);
+			System.out.println("SUBGAME ("+i+"):");
+			MoveScore moveScore = trees[i].getBestMoveScore(true);
 
-			if (bestMoveScore == null || moveScore.getScore() > bestMoveScore.getScore()){
-				bestMoveScore = moveScore;
+			if (moveScore.getMove()!=null){
+				if (bestMoveScore == null || moveScore.getScore() > bestMoveScore.getScore()){
+					bestMoveScore = moveScore;
+				}
 			}
-			System.out.println("BEST MOVE FOR SUBGAME ("+i+"): "+moveScore.getMove() + " : " + moveScore.getScore());
+			System.out.println("\t\tBEST MOVE: "+moveScore.getMove() + " : " + moveScore.getScore()+"\n");
 		}
 
-		if (bestMoveScore.getMove()==null){
+		if (bestMoveScore==null){
 			return getStateMachine().getLegalMoves(getCurrentState(), getRole()).get(0);
 		}
 
@@ -85,38 +84,24 @@ public class NotABotMonteCarloFactoring extends NotABot {
 
 
 	private void sampleUntilTimeout(){
-
-		Thread[] threads = new Thread[numSubgames];
-
+		// reset tree depth charges
+		int[] numSamples = new int[numSubgames];
 		for (int i=0; i<numSubgames; i++){
-			final int j = i;
-			threads[i] = new Thread(){
-				@Override
-				public void run(){
-					int numSamples = 0;
-					trees[j].resetDepthChargeCounter();
-					while (!NotABot.hasTimedOut()){
-						trees[j].updateSelectTemperature();
-						trees[j].runSample();
-						numSamples++;
-					}
-					System.out.println("SUBGAME ("+j+") - SAMPLES ("+numSamples+") - CHARGES ("+trees[j].getNumDepthCharges()+")");
-				}
-			};
+			trees[i].resetDepthChargeCounter();
+			numSamples[i] = 0;
 		}
-
-		for (int i=0; i<numSubgames; i++){
-			threads[i].start();
-		}
-
-
-		for (int i=0; i<numSubgames; i++){
-			try {
-				threads[i].join();
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+		// iterate until timeout
+		while (!NotABot.hasTimedOut()){
+			for (int i=0; i<numSubgames; i++){
+				trees[i].updateSelectTemperature();
+				trees[i].runSample();
+				numSamples[i]++;
+				if (NotABot.hasTimedOut()) break;
 			}
+		}
+		// print out depth charge info
+		for (int i=0; i<numSubgames; i++){
+			System.out.println("SUBGAME ("+i+") - SAMPLES ("+numSamples[i]+") - CHARGES ("+trees[i].getNumDepthCharges()+")");
 		}
 		System.out.println();
 

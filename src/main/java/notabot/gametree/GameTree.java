@@ -100,16 +100,6 @@ public class GameTree {
 		return true;
 	}
 
-	public boolean traverse(List<Move> moves){
-		root = root.getChildWithMoves(moves);
-		if (root == null) return false;
-		if (SHOW_VISUALIZER){
-			vis.setRoot(root);
-			if (lastMove != null) frame.setTitle(VIS_FRAME_TITLE + " - Last Move: " +lastMove);
-		}
-		return true;
-	}
-
 	/**
 	 * Computes best move from root using MiniMax with Alpha-Beta pruning
 	 */

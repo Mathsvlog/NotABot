@@ -12,6 +12,11 @@ public class MoveScore {
 		this.score = score;
 	}
 
+	public MoveScore(double score, Move m){
+		this(score);
+		updateMove(m);
+	}
+
 	public void updateMove(Move move){
 		this.move = move;
 	}

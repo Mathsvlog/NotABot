@@ -27,6 +27,7 @@ public class GameTreeNode {
 	boolean isTerminal;
 	List<Move> playerMoves;
 	int numPlayerMoves;
+	List<List<Move>> allMoves;
 
 	int numVisits = 0;
 	long sumSamples = 0;
@@ -42,6 +43,7 @@ public class GameTreeNode {
 
 	protected GameTreeNode(MachineState state, GameTree gameTree, Map<Role, Set<Move>> validMoves){
 		TREE = gameTree;
+
 		constructGameTreeNode(state, validMoves);
 	}
 
@@ -70,17 +72,21 @@ public class GameTreeNode {
 				// factoring
 				else{
 					Role playerRole = TREE.roles.get(TREE.playerIndex);
+					allMoves = new ArrayList<List<Move>>();
 
 					for (Role role: TREE.stateMachine.getRoles()){
+
 						List<Move> currMoves = TREE.stateMachine.getLegalMoves(state, role);
 						Set<Move> validMoves = validMoveMap.get(role);
-						for (int i=0; i<currMoves.size(); i++){
+						for (int i=currMoves.size()-1; i>=0; i--){
 							Move move = currMoves.get(i);
 							if (!validMoves.contains(move)){
 								currMoves.remove(move);
 							}
 						}
 						currMoves.add(null);
+
+						allMoves.add(currMoves);
 
 						if (role == playerRole){
 							playerMoves = currMoves;
@@ -89,8 +95,11 @@ public class GameTreeNode {
 
 						numMoveCombos *= currMoves.size();
 					}
+
 					children = new GameTreeNode[numMoveCombos];
+
 				}
+
 
 				Collections.sort(playerMoves, TREE.moveComparator);
 			}
@@ -168,6 +177,7 @@ public class GameTreeNode {
 	 */
 	void expandNode(int level){
 		if (isTerminal){
+			numVisits ++;
 			return;
 		}
 
@@ -258,11 +268,6 @@ public class GameTreeNode {
 		return null;
 	}
 
-	public GameTreeNode getChildWithMoves(List<Move> moves){
-		// TODO implement
-		return null;
-	}
-
 	/**
 	 * Computes the move set corresponding to the child index
 	 * and creates the child, computing the corresponding state
@@ -277,7 +282,6 @@ public class GameTreeNode {
 			// get each opponent's move for current combination
 			for (int r = 0; r < TREE.numRoles; r++) {
 				if (r != TREE.playerIndex){
-					// TODO limit these moves to subgame
 					List<Move> currMoves = TREE.stateMachine.getLegalMoves(state, TREE.roles.get(r));
 					moveCombo.add(currMoves.get((combo/divisor) % currMoves.size()));
 					divisor *= currMoves.size();
@@ -306,6 +310,7 @@ public class GameTreeNode {
 	 *	Simple metric of average goal value during sampling
 	 */
 	public double getScore(){
+		if (isTerminal) return terminalGoal;
 		if (numVisits==0) return 0;
 		return ((double) sumSamples)/numVisits;
 	}
@@ -327,6 +332,7 @@ public class GameTreeNode {
 
 		// keeps track of best move, assuming opponents will do their best move
 		MoveScore bestWorst = null;
+		MoveScore nullScore = null;
 
 		// for each of our possible moves
 		//for (Move move: getMoves(state)){
@@ -375,29 +381,39 @@ public class GameTreeNode {
 			}
 
 			if (isFirst){
-				System.out.println(move + " : " + ((worstBest==null)?"?":worstBest.getScore()));
+				System.out.println("\t"+move + " : " + ((worstBest==null)?"?":worstBest.getScore()));
 			}
 
 			// update best outcome of the worst outcomes
 			if (worstBest != null){
-				if (bestWorst == null || bestWorst.getScore() < worstBest.getScore()){
-					bestWorst = worstBest;
-					bestWorst.updateMove(move);
-				}
+				if (playerMoves.get(i)!=null){
+					if (bestWorst == null || bestWorst.getScore() < worstBest.getScore()){
+						bestWorst = worstBest;
+						bestWorst.updateMove(move);
+					}
 
-				// max node
-				alpha = Math.max(alpha, bestWorst.getScore());
-				if (alpha >= beta){
-					//System.out.println("MAX NODE BREAK");
-					break;
+					// max node
+					alpha = Math.max(alpha, bestWorst.getScore());
+					if (alpha >= beta){
+						//System.out.println("MAX NODE BREAK");
+						break;
+					}
+				}
+				else{
+					nullScore = worstBest;
 				}
 			}
 		}
 
 		if (bestWorst == null){
-			System.out.println("MINIMAX FOUND NODE WITH ALL NULL CHILDREN");
-			bestWorst = new MoveScore(0);
-			bestWorst.updateMove(playerMoves.get(TREE.rand.nextInt(playerMoves.size())));
+			if (nullScore == null){
+				System.out.println("MINIMAX FOUND NODE WITH ALL NULL CHILDREN");
+				bestWorst = new MoveScore(0);
+				bestWorst.updateMove(playerMoves.get(TREE.rand.nextInt(playerMoves.size())));
+			}
+			else{
+				bestWorst = nullScore;
+			}
 		}
 
 		return bestWorst;
