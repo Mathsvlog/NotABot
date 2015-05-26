@@ -169,7 +169,7 @@ public class GameTreeNode {
 	 * Heuristic used during selection phase of MCTS
 	 */
 	double selectFunction(int parentNumVisits){
-		return getScore() + TREE.selectTemperature*Math.sqrt(Math.log(parentNumVisits)/numVisits);
+		return getScore() + GameTree.selectTemperature*Math.sqrt(Math.log(parentNumVisits)/numVisits);
 	}
 
 	/**

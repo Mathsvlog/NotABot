@@ -5,6 +5,7 @@ import java.util.List;
 
 import notabot.MoveScore;
 import notabot.NotABot;
+import notabot.gametree.GameTree;
 import notabot.gametree.GameTreeFactoring;
 import notabot.propnet.NotABotPropNetStateMachine;
 
@@ -90,10 +91,11 @@ public class NotABotMonteCarloFactoring extends NotABot {
 			trees[i].resetDepthChargeCounter();
 			numSamples[i] = 0;
 		}
+
 		// iterate until timeout
 		while (!NotABot.hasTimedOut()){
+			GameTree.updateSelectTemperature();
 			for (int i=0; i<numSubgames; i++){
-				trees[i].updateSelectTemperature();
 				trees[i].runSample();
 				numSamples[i]++;
 				if (NotABot.hasTimedOut()) break;

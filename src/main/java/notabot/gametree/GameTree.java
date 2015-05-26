@@ -36,7 +36,8 @@ public class GameTree {
 	final int playerIndex;// this player's role index
 	final MoveComparator moveComparator;// used to sort move lists
 	int numDepthCharges = 0;// used to count number of paths sampled during turn
-	double selectTemperature;
+
+	static double selectTemperature;
 
 	public GameTree(StateMachine stateMachine, MachineState initialState, Role playerRole){
 		this.stateMachine = stateMachine;
@@ -137,10 +138,13 @@ public class GameTree {
 		return numDepthCharges;
 	}
 
+
 	/**
 	 * Updates the select phase temperature based on the remaining time
 	 */
-	public void updateSelectTemperature(){
+	public static void updateSelectTemperature(){
 		selectTemperature = NotABot.timeLeft()/100;
 	}
+
+
 }

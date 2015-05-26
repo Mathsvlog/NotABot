@@ -18,6 +18,7 @@ public class GameTreeFactoring extends GameTree {
 	//final Set<Move> VALID_MOVES;
 	final Map<Role, Set<Move>> VALID_MOVE_SETS;
 	final Map<Role, List<Move>> VALID_MOVES;
+	final boolean SUBTRACT_NULL_SCORE = true;
 
 	public GameTreeFactoring(NotABotPropNetStateMachine propNet, MachineState initialState,
 			Role playerRole, int subgameIndex) {
@@ -68,6 +69,27 @@ public class GameTreeFactoring extends GameTree {
 	}
 
 	/**
+	 * TODO NOT USED
+	 */
+	public MoveScore getNullMoveScore(){
+		double worst = Double.POSITIVE_INFINITY;
+		int nullIndex = root.playerMoves.indexOf(null);
+		int numMoves = root.playerMoves.size();
+		int numOppMoves = root.children.length / root.playerMoves.size();
+
+		for (int o=0; o<numOppMoves; o++){
+			int c = numMoves*o + nullIndex;
+			if (root.children[c] != null){
+				double score = root.children[c].getScore();
+				if (worst > score){
+					worst = score;
+				}
+			}
+		}
+		return new MoveScore(worst, null);
+	}
+
+	/**
 	 * Simulates two levels of minimax
 	 */
 	@Override
@@ -108,9 +130,24 @@ public class GameTreeFactoring extends GameTree {
 
 		}
 
-		if (best==null) best = nullScore;
+		if (best==null){
+			if (SUBTRACT_NULL_SCORE) best = new MoveScore(0, null);
+			else best = nullScore;
+		}
+
+		else if (SUBTRACT_NULL_SCORE){
+			best = new MoveScore(best.getScore()-nullScore.getScore(), best.getMove());
+		}
 
 		return best;
+	}
+
+	public int getNumVisits(){
+		return root.numVisits;
+	}
+
+	public double selectFunction(int totalVisits){
+		return root.selectFunction(totalVisits);
 	}
 
 }
