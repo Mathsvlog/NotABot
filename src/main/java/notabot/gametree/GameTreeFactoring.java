@@ -103,7 +103,7 @@ public class GameTreeFactoring extends GameTree {
 	}
 
 	public double selectFunction(int totalVisits){
-		return root.selectFunction(totalVisits);
+		return root.selectFunction(totalVisits, false);
 	}
 
 }

@@ -34,7 +34,7 @@ public class GameTreeNode {
 
 	int lastSelectMoveIndex;
 
-	boolean isExpanded = false;
+	//boolean isExpanded = false;
 
 	/**
 	 * Constructor for any state except the initial state
@@ -155,13 +155,15 @@ public class GameTreeNode {
 			int worstCombo = -1;
 			for (int j=0; j<numMoveCombos/numPlayerMoves; j++){
 				GameTreeNode child = children[combo];
-				double currScore = child.selectFunction(numVisits);
+				double currScore = child.selectFunction(numVisits, true);
 				if (currScore < worstScore){
 					worstCombo = combo;
 					worstScore = currScore;
 				}
 				combo += numPlayerMoves;
 			}
+
+			worstScore = children[worstCombo].selectFunction(numVisits, false);
 
 			if (worstScore > bestScore){
 				bestScore = worstScore;
@@ -190,10 +192,10 @@ public class GameTreeNode {
 	/**
 	 * Heuristic used during selection phase of MCTS
 	 */
-	double selectFunction(int parentNumVisits){
+	double selectFunction(int parentNumVisits, boolean isOpponent){
 		//if (isExpanded) return 0;
 		//return getScore() + GameTree.selectTemperature*Math.sqrt(Math.log(parentNumVisits)/numVisits);
-		return getScore()/100 + Math.sqrt(GameTree.selectTemperature*Math.log(parentNumVisits)/numVisits);
+		return ((isOpponent)?-1:1)*getScore()/100 + Math.sqrt(GameTree.selectTemperature*Math.log(parentNumVisits)/numVisits);
 	}
 
 	/**
@@ -518,7 +520,7 @@ public class GameTreeNode {
 		return lastSelectMoveIndex;
 	}
 
-
+	/*
 	boolean updateIsExpanded(){
 		if (isExpanded) return true;
 
@@ -536,5 +538,5 @@ public class GameTreeNode {
 		isExpanded = true;
 		return true;
 	}
-
+	*/
 }

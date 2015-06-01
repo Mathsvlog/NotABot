@@ -47,7 +47,8 @@ public class NotABotMonteCarlo extends NotABot {
 		// run samples until time runs out
 		int numSamples = 0;
 		tree.resetDepthChargeCounter();
-		while (!NotABot.hasTimedOut() && !tree.isExpanded()){
+		//while (!NotABot.hasTimedOut() && !tree.isExpanded()){
+		while (!NotABot.hasTimedOut()){
 			GameTree.updateSelectTemperature();
 			tree.runSample();
 			numSamples++;
@@ -55,7 +56,7 @@ public class NotABotMonteCarlo extends NotABot {
 		System.out.println("NUM SAMPLES RAN: " + numSamples);
 		System.out.println("NUM DEPTH CHARGES: " + tree.getNumDepthCharges());
 
-		if (tree.isExpanded()) System.out.println("TREE IS EXPANDED");
+		//if (tree.isExpanded()) System.out.println("TREE IS EXPANDED");
 
 	}
 

@@ -88,7 +88,7 @@ public class GameTree {
 			node.visit(goal);
 		}
 
-		//
+
 		//for (int i=path.size()-1; i>=0; i--){
 		//	if (!path.get(i).updateIsExpanded()) break;
 		//}
@@ -167,9 +167,10 @@ public class GameTree {
 		selectTemperature = 2;
 	}
 
+	/*
 	public boolean isExpanded(){
 		return root.isExpanded;
 	}
-
+	*/
 
 }
