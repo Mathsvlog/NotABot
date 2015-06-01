@@ -155,7 +155,7 @@ public class GameTreeNode {
 			int worstCombo = -1;
 			for (int j=0; j<numMoveCombos/numPlayerMoves; j++){
 				GameTreeNode child = children[combo];
-				double currScore = child.selectFunction(numVisits, true);
+				double currScore = child.selectFunction(numVisits, numPlayerMoves, true);
 				if (currScore < worstScore){
 					worstCombo = combo;
 					worstScore = currScore;
@@ -163,7 +163,7 @@ public class GameTreeNode {
 				combo += numPlayerMoves;
 			}
 
-			worstScore = children[worstCombo].selectFunction(numVisits, false);
+			worstScore = children[worstCombo].selectFunction(numVisits, numPlayerMoves, false);
 
 			if (worstScore > bestScore){
 				bestScore = worstScore;
@@ -193,7 +193,7 @@ public class GameTreeNode {
 	/**
 	 * Heuristic used during selection phase of MCTS
 	 */
-	double selectFunction(long parentNumVisits, boolean isOpponent){
+	double selectFunction(long parentNumVisits, int numMoves, boolean isOpponent){
 		//if (isExpanded) return 0;
 		//return getScore() + GameTree.selectTemperature*Math.sqrt(Math.log(parentNumVisits)/numVisits);
 		//return ((isOpponent)?-1:1)*getScore()/100 + Math.sqrt(GameTree.selectTemperature*Math.log(parentNumVisits)/numVisits);
@@ -202,7 +202,8 @@ public class GameTreeNode {
 		if (isOpponent){
 			return getScore()/100;
 		}
-		return getScore()/100 + Math.sqrt(GameTree.selectTemperature*Math.log(parentNumVisits)/numVisits);
+		//return getScore()/100 + Math.sqrt(GameTree.selectTemperature*Math.log(parentNumVisits)/numVisits);
+		return getScore()/100 + Math.sqrt((1500./(numMoves*numMoves))*Math.log(parentNumVisits)/numVisits);
 	}
 
 	/**

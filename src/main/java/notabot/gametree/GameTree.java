@@ -164,7 +164,7 @@ public class GameTree {
 	public static void updateSelectTemperature(){
 		//selectTemperature = 10+NotABot.timeLeft()/1000;
 		//selectTemperature = 100*Math.sqrt(2);
-		selectTemperature = 20;
+		selectTemperature = 2;
 	}
 
 	/*
