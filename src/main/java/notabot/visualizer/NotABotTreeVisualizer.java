@@ -57,7 +57,6 @@ public class NotABotTreeVisualizer extends PApplet{
 
 	@Override
 	public void draw(){
-		//System.out.println("DRAW");
 		background(255);
 
 		float thick = (float) (height) / (numMoves);

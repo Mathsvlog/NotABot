@@ -39,9 +39,13 @@ public class GameTree {
 
 	private final int MINIMAX_LEVEL = 1;
 
-	static double selectTemperature;
+	double selectTemperature;
+
+	private static int CURR_TREE_INDEX = 0;
+	private final int treeIndex;
 
 	public GameTree(StateMachine stateMachine, MachineState initialState, Role playerRole){
+		treeIndex = CURR_TREE_INDEX++;
 		this.stateMachine = stateMachine;
 		playerIndex = stateMachine.getRoles().indexOf(playerRole);
 		roles = stateMachine.getRoles();
@@ -54,7 +58,8 @@ public class GameTree {
 			System.out.println("BUILD VIS");
 			vis = new NotABotTreeVisualizer();
 			vis.setRoot(root);
-			frame = new JFrame(VIS_FRAME_TITLE);
+			updateSelectTemperature();
+			frame = new JFrame(treeIndex + "("+selectTemperature+") - "+ VIS_FRAME_TITLE);
 			frame.add(vis);
 			vis.init();
 			frame.setVisible(true);
@@ -107,7 +112,7 @@ public class GameTree {
 		if (root == null) return false;
 		if (SHOW_VISUALIZER){
 			vis.setRoot(root);
-			if (lastMove != null) frame.setTitle(VIS_FRAME_TITLE + " - Last Move: " +lastMove);
+			if (lastMove != null) frame.setTitle(treeIndex + "("+selectTemperature+") - "+ VIS_FRAME_TITLE + " - Last Move: " +lastMove);
 		}
 		return true;
 	}
@@ -161,10 +166,11 @@ public class GameTree {
 	/**
 	 * Updates the select phase temperature based on the remaining time
 	 */
-	public static void updateSelectTemperature(){
+	public void updateSelectTemperature(){
 		//selectTemperature = 10+NotABot.timeLeft()/1000;
 		//selectTemperature = 100*Math.sqrt(2);
-		selectTemperature = 2;
+		if (treeIndex%2==0) selectTemperature = 2;
+		else selectTemperature = 20;
 	}
 
 	/*

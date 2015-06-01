@@ -202,8 +202,8 @@ public class GameTreeNode {
 		if (isOpponent){
 			return getScore()/100;
 		}
-		//return getScore()/100 + Math.sqrt(GameTree.selectTemperature*Math.log(parentNumVisits)/numVisits);
-		return getScore()/100 + Math.sqrt((1500./(numMoves*numMoves))*Math.log(parentNumVisits)/numVisits);
+		return getScore()/100 + Math.sqrt(TREE.selectTemperature*Math.log(parentNumVisits)/numVisits);
+		//return getScore()/100 + Math.sqrt((2000./(numMoves*numMoves))*Math.log(parentNumVisits)/numVisits);
 	}
 
 	/**
