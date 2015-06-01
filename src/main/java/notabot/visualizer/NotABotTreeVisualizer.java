@@ -51,7 +51,7 @@ public class NotABotTreeVisualizer extends PApplet{
 		background(255);
 		frameRate(VIS_FPS);
 		fill(0);
-		stroke(0);
+		noStroke();
 		textAlign(LEFT, TOP);
 	}
 
@@ -70,9 +70,11 @@ public class NotABotTreeVisualizer extends PApplet{
 			y = thick*i;
 
 			score = getMoveScore(i);
+			fill(0,255,0);
 			rect(0, y+offset, width/2*(moveSamples[i]/maxMoveSamples), bar);
+			fill(255,0,0);
 			rect(width/2, y+offset, width*score/200, bar);
-
+			fill(0);
 			line(0,y,width,y);
 			if (m==null)
 				text("MOVE: null", 0, y);
