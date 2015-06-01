@@ -162,9 +162,9 @@ public class GameTree {
 	 * Updates the select phase temperature based on the remaining time
 	 */
 	public static void updateSelectTemperature(){
-		//selectTemperature = NotABot.timeLeft()/1000;
+		//selectTemperature = 10+NotABot.timeLeft()/1000;
 		//selectTemperature = 100*Math.sqrt(2);
-		selectTemperature = 2;
+		selectTemperature = 20;
 	}
 
 	/*

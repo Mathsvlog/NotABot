@@ -98,7 +98,7 @@ public class GameTreeFactoring extends GameTree {
 	}
 
 
-	public int getNumVisits(){
+	public long getNumVisits(){
 		return root.numVisits;
 	}
 

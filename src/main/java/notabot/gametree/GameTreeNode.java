@@ -29,7 +29,7 @@ public class GameTreeNode {
 	int numPlayerMoves;
 	List<List<Move>> allMoves;
 
-	int numVisits = 0;
+	long numVisits = 0;
 	long sumSamples = 0;
 
 	int lastSelectMoveIndex;
@@ -181,7 +181,8 @@ public class GameTreeNode {
 		/*
 		if (path.size()==1){
 			Move m = playerMoves.get(lastSelectMoveIndex);
-			System.out.println(m.toString() + " : " + (int)bestScore + ", " + (int)bestNode.getScore());
+			//if (m!=null) System.out.println(m.toString() + " : " + (int)bestScore + ", " + (int)bestNode.getScore());
+			if (m!=null) System.out.println(m.toString() + " : " +bestScore);
 		}
 		*/
 
@@ -192,10 +193,16 @@ public class GameTreeNode {
 	/**
 	 * Heuristic used during selection phase of MCTS
 	 */
-	double selectFunction(int parentNumVisits, boolean isOpponent){
+	double selectFunction(long parentNumVisits, boolean isOpponent){
 		//if (isExpanded) return 0;
 		//return getScore() + GameTree.selectTemperature*Math.sqrt(Math.log(parentNumVisits)/numVisits);
-		return ((isOpponent)?-1:1)*getScore()/100 + Math.sqrt(GameTree.selectTemperature*Math.log(parentNumVisits)/numVisits);
+		//return ((isOpponent)?-1:1)*getScore()/100 + Math.sqrt(GameTree.selectTemperature*Math.log(parentNumVisits)/numVisits);
+		//return ((isOpponent)?-1:1)*getScore()/100 + Math.sqrt(GameTree.selectTemperature*Math.log(parentNumVisits)/numVisits);
+
+		if (isOpponent){
+			return getScore()/100;
+		}
+		return getScore()/100 + Math.sqrt(GameTree.selectTemperature*Math.log(parentNumVisits)/numVisits);
 	}
 
 	/**
@@ -270,6 +277,14 @@ public class GameTreeNode {
 	void visit(int goal){
 		sumSamples += goal;
 		numVisits ++;
+		/*
+		if (isTerminal && numVisits > 1000){
+			System.out.println("ASDF : "+terminalGoal+" : " +numVisits + " : " + this);
+		}
+		else{
+			System.out.println();
+		}
+		*/
 	}
 
 	/**
@@ -479,7 +494,7 @@ public class GameTreeNode {
 	/**
 	 * Returns number of times this node was visited
 	 */
-	public int getNumVisits(){
+	public long getNumVisits(){
 		return numVisits;
 	}
 
