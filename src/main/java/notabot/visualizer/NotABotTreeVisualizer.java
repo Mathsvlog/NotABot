@@ -74,7 +74,10 @@ public class NotABotTreeVisualizer extends PApplet{
 			rect(width/2, y+offset, width*score/200, bar);
 
 			line(0,y,width,y);
-			text("MOVE: "+m.toString(), 0, y);
+			if (m==null)
+				text("MOVE: null", 0, y);
+			else
+				text("MOVE: "+m.toString(), 0, y);
 			text("SAMPLES: "+moveSamples[i], width/4, y);
 			text("SCORE: "+(int)score, width/2, y);
 		}

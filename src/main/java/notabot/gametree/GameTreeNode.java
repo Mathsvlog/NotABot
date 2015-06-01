@@ -34,6 +34,8 @@ public class GameTreeNode {
 
 	int lastSelectMoveIndex;
 
+	boolean isExpanded = false;
+
 	/**
 	 * Constructor for any state except the initial state
 	 */
@@ -125,9 +127,11 @@ public class GameTreeNode {
 	/**
 	 * Selection phase of MCTS
 	 */
-	GameTreeNode selectNode(){
+	GameTreeNode selectNode(List<GameTreeNode> path){
+		path.add(this);
+
 		// if node was just created
-		if (numVisits == 0 || isTerminal){
+		if (isTerminal){
 			return this;
 		}
 
@@ -141,35 +145,55 @@ public class GameTreeNode {
 		}
 
 		// pick child with best heuristic score
-		double bestScore = 0;
+		double bestScore = -1;
 		GameTreeNode bestNode = this;
 		int bestNodeIndex = 0;
-		Move m = null;
-		for (int i=0; i<numMoveCombos; i++){
-			double currScore = children[i].selectFunction(numVisits);
-			if (currScore > bestScore){
-				bestScore = currScore;
-				bestNode = children[i];
-				bestNodeIndex = i;
-				m = playerMoves.get(i%numPlayerMoves);
+		for (int i=0; i<numPlayerMoves; i++){
+			int combo = i;
+
+			double worstScore = Double.POSITIVE_INFINITY;
+			int worstCombo = -1;
+			for (int j=0; j<numMoveCombos/numPlayerMoves; j++){
+				GameTreeNode child = children[combo];
+				double currScore = child.selectFunction(numVisits);
+				if (currScore < worstScore){
+					worstCombo = combo;
+					worstScore = currScore;
+				}
+				combo += numPlayerMoves;
+			}
+
+			if (worstScore > bestScore){
+				bestScore = worstScore;
+				bestNode = children[worstCombo];
+				bestNodeIndex = worstCombo;
 			}
 		}
 
 		if (bestNode==null){
 			System.out.println("SELECT PHASE RETURNED NULL");
 		}
-		//System.out.println(m.toString() + " : " + (int)bestScore + ", " + (int)bestNode.getScore());
 
 		lastSelectMoveIndex = bestNodeIndex%numPlayerMoves;
 
-		return bestNode;
+		/*
+		if (path.size()==1){
+			Move m = playerMoves.get(lastSelectMoveIndex);
+			System.out.println(m.toString() + " : " + (int)bestScore + ", " + (int)bestNode.getScore());
+		}
+		*/
+
+
+		return bestNode.selectNode(path);
 	}
 
 	/**
 	 * Heuristic used during selection phase of MCTS
 	 */
 	double selectFunction(int parentNumVisits){
-		return getScore() + GameTree.selectTemperature*Math.sqrt(Math.log(parentNumVisits)/numVisits);
+		//if (isExpanded) return 0;
+		//return getScore() + GameTree.selectTemperature*Math.sqrt(Math.log(parentNumVisits)/numVisits);
+		return getScore()/100 + Math.sqrt(GameTree.selectTemperature*Math.log(parentNumVisits)/numVisits);
 	}
 
 	/**
@@ -239,6 +263,35 @@ public class GameTreeNode {
 		numVisits ++;
 
 		return goal;
+	}
+
+	void visit(int goal){
+		sumSamples += goal;
+		numVisits ++;
+	}
+
+	/**
+	 * Simulation phase of MCTS
+	 */
+	public int simulate(){
+		TREE.numDepthCharges++;
+		if (isTerminal){
+			return terminalGoal;
+		}
+
+		MachineState curr = state;
+
+		try {
+			while (!TREE.stateMachine.isTerminal(curr)){
+				curr = TREE.stateMachine.getRandomNextState(curr);
+			}
+			return TREE.stateMachine.getGoal(curr, TREE.roles.get(TREE.playerIndex));
+		}
+		catch (MoveDefinitionException | TransitionDefinitionException | GoalDefinitionException e) {
+			e.printStackTrace();
+		}
+
+		return 0;
 	}
 
 	/**
@@ -465,5 +518,23 @@ public class GameTreeNode {
 		return lastSelectMoveIndex;
 	}
 
+
+	boolean updateIsExpanded(){
+		if (isExpanded) return true;
+
+		if (isTerminal){
+			isExpanded = true;
+			return true;
+		}
+
+		for (int i=0; i<numMoveCombos; i++){
+			if (children[i] == null || !children[i].isExpanded){
+				return false;
+			}
+		}
+
+		isExpanded = true;
+		return true;
+	}
 
 }

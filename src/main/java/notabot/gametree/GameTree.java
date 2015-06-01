@@ -1,5 +1,6 @@
 package notabot.gametree;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Random;
@@ -7,7 +8,6 @@ import java.util.Random;
 import javax.swing.JFrame;
 
 import notabot.MoveScore;
-import notabot.NotABot;
 import notabot.visualizer.NotABotTreeVisualizer;
 
 import org.ggp.base.util.statemachine.MachineState;
@@ -25,10 +25,10 @@ public class GameTree {
 	protected final int numRoles;
 	protected Move lastMove;
 
-	public static final boolean SHOW_VISUALIZER = false;
-	private final String VIS_FRAME_TITLE = "NotABot Game Tree Visualizer";
-	private final NotABotTreeVisualizer vis;
-	private final JFrame frame;
+	public static final boolean SHOW_VISUALIZER = true;
+	protected final String VIS_FRAME_TITLE = "NotABot Game Tree Visualizer";
+	protected final NotABotTreeVisualizer vis;
+	protected final JFrame frame;
 
 	// info for GameTreeNodes to access
 	final Random rand = new Random();
@@ -36,6 +36,8 @@ public class GameTree {
 	final int playerIndex;// this player's role index
 	final MoveComparator moveComparator;// used to sort move lists
 	int numDepthCharges = 0;// used to count number of paths sampled during turn
+
+	private final int MINIMAX_LEVEL = 1;
 
 	static double selectTemperature;
 
@@ -53,7 +55,6 @@ public class GameTree {
 			vis = new NotABotTreeVisualizer();
 			vis.setRoot(root);
 			frame = new JFrame(VIS_FRAME_TITLE);
-			//frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 			frame.add(vis);
 			vis.init();
 			frame.setVisible(true);
@@ -78,9 +79,19 @@ public class GameTree {
 	 * Perform one sample down the tree
 	 */
 	public void runSample(){
-		GameTreeNode selected = root.selectNode();
-		//selected.expandNode((selected==root)?numRoles:numRoles-1);
-		selected.expandNode(0);
+		List<GameTreeNode> path = new ArrayList<GameTreeNode>();
+		GameTreeNode selected = root.selectNode(path);
+		path.add(selected);
+
+		int goal = selected.simulate();
+		for (GameTreeNode node: path){
+			node.visit(goal);
+		}
+
+		//
+		//for (int i=path.size()-1; i>=0; i--){
+		//	if (!path.get(i).updateIsExpanded()) break;
+		//}
 
 		if (SHOW_VISUALIZER){
 			vis.sample(root.getLastSelectMoveIndex());
@@ -112,9 +123,17 @@ public class GameTree {
 	 * Computes best move from root using MiniMax with Alpha-Beta pruning
 	 */
 	public MoveScore getBestMoveScore(boolean printout){
+		/*
+		System.out.println(root.getScore());
+		for (int i=0; i<root.children.length; i++){
+			System.out.println(root.children[i].getScore());
+		}
+		*/
+
 		MoveScore ms;
 		try {
-			ms = root.getBestMove(numRoles, Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY, printout);
+			//ms = root.getBestMove(numRoles*MINIMAX_LEVEL, Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY, printout);
+			ms = root.getBestMove(1, Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY, printout);
 			return ms;
 		}
 		catch (MoveDefinitionException | TransitionDefinitionException | GoalDefinitionException e) {
@@ -143,7 +162,13 @@ public class GameTree {
 	 * Updates the select phase temperature based on the remaining time
 	 */
 	public static void updateSelectTemperature(){
-		selectTemperature = NotABot.timeLeft()/100;
+		//selectTemperature = NotABot.timeLeft()/1000;
+		//selectTemperature = 100*Math.sqrt(2);
+		selectTemperature = 2;
+	}
+
+	public boolean isExpanded(){
+		return root.isExpanded;
 	}
 
 

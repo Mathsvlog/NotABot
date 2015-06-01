@@ -29,6 +29,9 @@ public class GameTreeFactoring extends GameTree {
 
 		root = new GameTreeNodeFactoring(initialState, this);
 
+		if (SHOW_VISUALIZER){
+			vis.setRoot(root);
+		}
 	}
 
 	private Map<Role, List<Move>> computeValidMoves(){
@@ -66,6 +69,11 @@ public class GameTreeFactoring extends GameTree {
 		int combo = getRootChildCombo(moves);
 		if (root.children[combo] == null) root.createChild(combo);
 		root = root.children[combo];
+
+		if (SHOW_VISUALIZER){
+			vis.setRoot(root);
+			if (lastMove != null) frame.setTitle(VIS_FRAME_TITLE + " - Last Move: " +lastMove);
+		}
 	}
 
 	/**
@@ -89,58 +97,6 @@ public class GameTreeFactoring extends GameTree {
 		return new MoveScore(worst, null);
 	}
 
-	/**
-	 * Simulates two levels of minimax
-	 */
-	@Override
-	public MoveScore getBestMoveScore(boolean printout){
-		MoveScore best = null;
-		MoveScore nullScore = null;
-
-		System.out.println("NUM PLAYER MOVES: " + root.playerMoves.size());
-		int numMoves = root.playerMoves.size();
-		int numOppMoves = root.children.length / root.playerMoves.size();
-		// for each player move
-		for (int p=0; p<numMoves; p++){
-
-			// determine worst outcome for this move
-			double worst = Double.POSITIVE_INFINITY;
-
-			for (int o=0; o<numOppMoves; o++){
-				int c = numMoves*o + p;
-				if (root.children[c] != null){
-					double score = root.children[c].getScore();
-					if (worst > score){
-						worst = score;
-					}
-				}
-			}
-
-			// keep track of best move
-			if (root.playerMoves.get(p) != null){
-				if (best==null || best.getScore() < worst){
-					best = new MoveScore(worst, root.playerMoves.get(p));
-				}
-			}
-			else{
-				nullScore = new MoveScore(worst, null);
-			}
-
-			if (printout) System.out.println("\t"+root.playerMoves.get(p) + " : " + worst);
-
-		}
-
-		if (best==null){
-			if (SUBTRACT_NULL_SCORE) best = new MoveScore(0, null);
-			else best = nullScore;
-		}
-
-		else if (SUBTRACT_NULL_SCORE){
-			best = new MoveScore(best.getScore()-nullScore.getScore(), best.getMove());
-		}
-
-		return best;
-	}
 
 	public int getNumVisits(){
 		return root.numVisits;

@@ -95,11 +95,16 @@ public class NotABotMonteCarloFactoring extends NotABot {
 		// iterate until timeout
 		while (!NotABot.hasTimedOut()){
 			GameTree.updateSelectTemperature();
+			//boolean allExpanded = true;
 			for (int i=0; i<numSubgames; i++){
-				trees[i].runSample();
-				numSamples[i]++;
-				if (NotABot.hasTimedOut()) break;
+				//if (!trees[i].isExpanded()){
+					//allExpanded = false;
+					trees[i].runSample();
+					numSamples[i]++;
+					if (NotABot.hasTimedOut()) break;
+				//}
 			}
+			//if (allExpanded) break;
 		}
 		// print out depth charge info
 		for (int i=0; i<numSubgames; i++){

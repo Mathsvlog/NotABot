@@ -421,18 +421,22 @@ public class NotABotPropNetStateMachine extends StateMachine{
 		Set<Component> subterminalProps = new HashSet<Component>();
 		Component terminalInput = propNet.getTerminalProposition().getSingleInput();
 
-		// TODO keep searching until hit non-OR
 		// compute list of subterminal components
-		System.out.println("Potential Subterminal Components:");
-		if (terminalInput instanceof Or){
-			for (Component input: terminalInput.getInputs()){
-				System.out.println(input);
-				subterminalProps.add(input);
+		Stack<Component> searchStack = new Stack<Component>();
+		searchStack.push(terminalInput);
+		while (!searchStack.isEmpty()){
+			Component curr = searchStack.pop();
+			if (curr instanceof Not || curr instanceof And){
+				//System.out.println(curr);
+				subterminalProps.add(curr);
+			}
+			else{
+				for (Component c:curr.getInputs()){
+					searchStack.push(c);
+				}
 			}
 		}
-		else{
-			subterminalProps.add(propNet.getTerminalProposition());
-		}
+		System.out.println("Potential Subterminal Components: "+subterminalProps.size());
 
 		// finds inputs for each subterminal
 		List<Set<Proposition>> subgameInputs = new ArrayList<Set<Proposition>>();
@@ -453,10 +457,11 @@ public class NotABotPropNetStateMachine extends StateMachine{
 				if (setContainsAny(subgameInputs.get(i),subgameInputs.get(j))){
 					subgameInputs.get(i).addAll(subgameInputs.get(j));
 					subgameInputs.remove(j);
-					System.out.println("Removed subgame");
+					//System.out.println("Removed subgame");
 				}
 			}
 		}
+
 
 		// initializes all subgame maps
 		List<Map<Role, Set<Move>>> subgameInputMaps = new ArrayList<Map<Role, Set<Move>>>();
@@ -484,6 +489,8 @@ public class NotABotPropNetStateMachine extends StateMachine{
 				}
 			}
 		}
+
+		System.out.println("Final Subterminal Components: "+subgameInputMaps.size());
 
 		// print out statistics about subgames
 		for (int i=0; i<subgameInputMaps.size(); i++){
