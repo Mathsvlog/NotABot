@@ -15,11 +15,14 @@ import org.ggp.base.util.statemachine.exceptions.GoalDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.MoveDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
 
-public class NotABotMonteCarloFactoring extends NotABot {
-
+public class NotABotMonteCarloFactoringThreading extends NotABot {
 	GameTreeFactoring[] trees;
 	NotABotPropNetStateMachine propNet;
 	int numSubgames;
+
+	//Mutex treeMutex;
+	Thread treeThread;
+	boolean gameOn = true;
 
 	@Override
 	protected void runMetaGame() {
@@ -34,8 +37,25 @@ public class NotABotMonteCarloFactoring extends NotABot {
 		for (int i=0; i<numSubgames; i++){
 			trees[i] = new GameTreeFactoring(propNet, getCurrentState(), getRole(), i);
 		}
+		//treeMutex = new Mutex();
 
-		sampleUntilTimeout();
+		treeThread = new Thread(){
+			@Override
+			public void run(){
+				while (gameOn){
+					for (int i=0; i<numSubgames; i++){
+						//treeMutex.lock();
+						trees[i].runSample();
+						//treeMutex.unlock();
+						//System.out.println("RELEASE MUTEX");
+					}
+				}
+			}
+		};
+		treeThread.start();
+
+		sleepUntilTimeout();
+		//sampleUntilTimeout();
 	}
 
 	@Override
@@ -43,6 +63,7 @@ public class NotABotMonteCarloFactoring extends NotABot {
 			TransitionDefinitionException, GoalDefinitionException {
 
 		System.out.println("________________________________________________\n");
+
 
 		List<List<GdlTerm>> history = getMatch().getMoveHistory();
 		if (history.size()>0){
@@ -53,15 +74,20 @@ public class NotABotMonteCarloFactoring extends NotABot {
 			}
 
 			// traverse all trees
+			//treeMutex.lock();
 			for (int i=0; i<numSubgames; i++){
 				trees[i].traverse(lastMoves);
 			}
+			//treeMutex.unlock();
 		}
 
 		// sample trees until timeout
-		sampleUntilTimeout();
+		//sampleUntilTimeout();
+		sleepUntilTimeout();
 
 		// compute best score among all trees
+		//System.out.println("ATTEMPT MUTEX");
+		//treeMutex.lock();
 		MoveScore bestMoveScore = null;
 		for (int i=0; i<numSubgames; i++) {
 			System.out.println("SUBGAME ("+i+"):");
@@ -74,6 +100,7 @@ public class NotABotMonteCarloFactoring extends NotABot {
 			}
 			System.out.println("\t\tBEST MOVE: "+moveScore.getMove() + " : " + moveScore.getScore()+"\n");
 		}
+		//treeMutex.unlock();
 
 		if (bestMoveScore==null){
 			return getStateMachine().getLegalMoves(getCurrentState(), getRole()).get(0);
@@ -82,7 +109,30 @@ public class NotABotMonteCarloFactoring extends NotABot {
 		return bestMoveScore.getMove();
 	}
 
+	private void sleepUntilTimeout(){
+		try {
+			Thread.sleep(timeLeft());
+		}
+		catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+	}
 
+
+
+	@Override
+	public void stateMachineStop() {
+		// TODO Auto-generated method stub
+		gameOn = false;
+		try {
+			treeThread.join();
+		}
+		catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+	}
+
+	/*
 	private void sampleUntilTimeout(){
 		// reset tree depth charges
 		int[] numSamples = new int[numSubgames];
@@ -106,5 +156,6 @@ public class NotABotMonteCarloFactoring extends NotABot {
 		System.out.println();
 
 	}
+	*/
 
 }

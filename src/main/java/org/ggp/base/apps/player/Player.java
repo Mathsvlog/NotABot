@@ -123,7 +123,7 @@ public final class Player extends JPanel
 		this.add(playersPanel, new GridBagConstraints(1, 0, 1, 1, 1.0, 1.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(5, 5, 5, 5), 5, 5));
 
 		//typeComboBox.setSelectedItem("NotABotMonteCarlo");
-		typeComboBox.setSelectedItem("NotABotMonteCarloFactoring");
+		typeComboBox.setSelectedItem("NotABotMonteCarloFactoringThreading");
 		createButton.doClick();
 		typeComboBox.setSelectedItem("SampleMonteCarloGamer");
 		//typeComboBox.setSelectedItem("Random");

@@ -37,10 +37,6 @@ public class GameTree {
 	final MoveComparator moveComparator;// used to sort move lists
 	int numDepthCharges = 0;// used to count number of paths sampled during turn
 
-	private final int MINIMAX_LEVEL = 1;
-
-	double selectTemperature;
-
 	private static int CURR_TREE_INDEX = 0;
 	final int treeIndex;
 
@@ -53,13 +49,12 @@ public class GameTree {
 		moveComparator = new MoveComparator();
 
 		root = new GameTreeNode(initialState, this);
-		updateSelectTemperature();
-		System.out.println("TREE: " + treeIndex + ", " + selectTemperature+", " +stateMachine.getRoles().get(playerIndex));
+
 		if (SHOW_VISUALIZER){
 			System.out.println("BUILD VIS");
 			vis = new NotABotTreeVisualizer();
 			vis.setRoot(root);
-			frame = new JFrame(treeIndex + "("+selectTemperature+") - "+ VIS_FRAME_TITLE);
+			frame = new JFrame(treeIndex + " - "+ VIS_FRAME_TITLE);
 			frame.add(vis);
 			vis.init();
 			frame.setVisible(true);
@@ -93,11 +88,6 @@ public class GameTree {
 			node.visit(goal);
 		}
 
-
-		//for (int i=path.size()-1; i>=0; i--){
-		//	if (!path.get(i).updateIsExpanded()) break;
-		//}
-
 		if (SHOW_VISUALIZER){
 			vis.sample(root.getLastSelectMoveIndex());
 		}
@@ -112,7 +102,7 @@ public class GameTree {
 		if (root == null) return false;
 		if (SHOW_VISUALIZER){
 			vis.setRoot(root);
-			if (lastMove != null) frame.setTitle(treeIndex + "("+selectTemperature+") - "+ VIS_FRAME_TITLE + " - Last Move: " +lastMove);
+			if (lastMove != null) frame.setTitle(treeIndex + " - "+ VIS_FRAME_TITLE + " - Last Move: " +lastMove);
 		}
 		return true;
 	}
@@ -161,22 +151,5 @@ public class GameTree {
 	public int getNumDepthCharges(){
 		return numDepthCharges;
 	}
-
-
-	/**
-	 * Updates the select phase temperature based on the remaining time
-	 */
-	public void updateSelectTemperature(){
-		//selectTemperature = 10+NotABot.timeLeft()/1000;
-		//selectTemperature = 100*Math.sqrt(2);
-		if (treeIndex%2==0) selectTemperature = 2;
-		else selectTemperature = 20;
-	}
-
-	/*
-	public boolean isExpanded(){
-		return root.isExpanded;
-	}
-	*/
 
 }
