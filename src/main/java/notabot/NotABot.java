@@ -21,7 +21,7 @@ public abstract class NotABot extends StateMachineGamer{
 	// time at which computation must stop
 	private static long timeout;
 	// time left that computation of a move or metagame must stop
-	private static final long TIME_CUSHION = 1500;
+	private static final long TIME_CUSHION = 1000;
 
 	/**
 	 * Run metagame before the game starts

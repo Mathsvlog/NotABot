@@ -57,6 +57,7 @@ public class NotABotTreeVisualizer extends PApplet{
 
 	@Override
 	public void draw(){
+		if (root == null) return;
 		background(255);
 
 		float thick = (float) (height) / (numMoves);
@@ -64,27 +65,29 @@ public class NotABotTreeVisualizer extends PApplet{
 		float bar = min(thick/2, 30);
 		float y;
 		float score;
-		for (int i=0; i<numMoves; i++){
-			Move m = playerMoves.get(i);
-			y = thick*i;
+		try{
+			for (int i=0; i<numMoves; i++){
+				Move m = playerMoves.get(i);
+				y = thick*i;
 
-			score = getMoveScore(i);
-			fill(0,255,0);
-			rect(0, y+offset, width/2*(moveSamples[i]/maxMoveSamples), bar);
-			fill(255,0,0);
-			rect(width/2, y+offset, width*score/200, bar);
-			fill(0);
-			line(0,y,width,y);
-			if (m==null)
-				text("MOVE: null", 0, y);
-			else
-				text("MOVE: "+m.toString(), 0, y);
-			text("SAMPLES: "+moveSamples[i], width/4, y);
-			text("SCORE: "+(int)score, width/2, y);
+				score = getMoveScore(i);
+				fill(0,255,0);
+				rect(0, y+offset, width/2*(moveSamples[i]/maxMoveSamples), bar);
+				fill(255,0,0);
+				rect(width/2, y+offset, width*score/200, bar);
+				fill(0);
+				line(0,y,width,y);
+				if (m==null)
+					text("MOVE: null", 0, y);
+				else
+					text("MOVE: "+m.toString(), 0, y);
+				text("SAMPLES: "+moveSamples[i], width/4, y);
+				text("SCORE: "+(int)score, width/2, y);
+			}
+			line(width/2,0,width/2,height);
 		}
-
-		line(width/2,0,width/2,height);
-
+		catch (Exception e){
+		}
 	}
 
 	private int getMoveVisits(int moveIndex){

@@ -14,9 +14,11 @@ import org.ggp.base.util.statemachine.MachineState;
 import org.ggp.base.util.statemachine.Move;
 import org.ggp.base.util.statemachine.Role;
 import org.ggp.base.util.statemachine.StateMachine;
+import org.ggp.base.util.statemachine.cache.CachedStateMachine;
 import org.ggp.base.util.statemachine.exceptions.GoalDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.MoveDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
+import org.ggp.base.util.statemachine.implementation.prover.ProverStateMachine;
 
 
 /**
@@ -180,7 +182,22 @@ public abstract class StateMachineGamer extends Gamer
 		{
 			stateMachine = getInitialStateMachine();
 			stateMachine.initialize(getMatch().getGame().getRules());
+
+			long t = System.currentTimeMillis();
 			currentState = stateMachine.getInitialState();
+
+			// Switches to a prover state machine if propnet is too slow
+			if (System.currentTimeMillis()-t > 2000){
+				System.out.println("GAME TOO BIG FOR PROPNET! SWITCHING TO PROVER!");
+				System.out.println(System.currentTimeMillis()-t);
+				stateMachine = new CachedStateMachine(new ProverStateMachine());
+				stateMachine.initialize(getMatch().getGame().getRules());
+				currentState = stateMachine.getInitialState();
+			}
+			else{
+				System.out.println("PROPNET IS GOOD!");
+			}
+
 			role = stateMachine.getRoleFromConstant(getRoleName());
 			getMatch().appendState(currentState.getContents());
 

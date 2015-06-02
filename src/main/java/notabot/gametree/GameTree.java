@@ -25,7 +25,7 @@ public class GameTree {
 	protected final int numRoles;
 	protected Move lastMove;
 
-	public static final boolean SHOW_VISUALIZER = true;
+	public static final boolean SHOW_VISUALIZER = false;
 	protected final String VIS_FRAME_TITLE = "NotABot Game Tree Visualizer";
 	protected final NotABotTreeVisualizer vis;
 	protected final JFrame frame;

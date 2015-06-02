@@ -188,8 +188,9 @@ public class GameTreeNode {
 	 */
 	double selectFunction(long parentNumVisits, int numMoves, boolean isOpponent){
 		if (isOpponent){
-			return getScore()/100 - Math.sqrt(45./numMoves*Math.log(parentNumVisits)/numVisits);
+			return getScore()/100 - Math.sqrt(Math.min(2,45./numMoves)*Math.log(parentNumVisits)/numVisits);
 		}
+
 		return getScore()/100 + Math.sqrt(45./numMoves*Math.log(parentNumVisits)/numVisits);
 	}
 
