@@ -42,7 +42,7 @@ public class GameTree {
 	double selectTemperature;
 
 	private static int CURR_TREE_INDEX = 0;
-	private final int treeIndex;
+	final int treeIndex;
 
 	public GameTree(StateMachine stateMachine, MachineState initialState, Role playerRole){
 		treeIndex = CURR_TREE_INDEX++;
@@ -53,12 +53,12 @@ public class GameTree {
 		moveComparator = new MoveComparator();
 
 		root = new GameTreeNode(initialState, this);
-
+		updateSelectTemperature();
+		System.out.println("TREE: " + treeIndex + ", " + selectTemperature+", " +stateMachine.getRoles().get(playerIndex));
 		if (SHOW_VISUALIZER){
 			System.out.println("BUILD VIS");
 			vis = new NotABotTreeVisualizer();
 			vis.setRoot(root);
-			updateSelectTemperature();
 			frame = new JFrame(treeIndex + "("+selectTemperature+") - "+ VIS_FRAME_TITLE);
 			frame.add(vis);
 			vis.init();

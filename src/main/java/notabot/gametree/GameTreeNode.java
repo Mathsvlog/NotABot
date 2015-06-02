@@ -151,6 +151,8 @@ public class GameTreeNode {
 		for (int i=0; i<numPlayerMoves; i++){
 			int combo = i;
 
+			if (playerMoves.get(i)==null && playerMoves.size()>1) continue;
+
 			double worstScore = Double.POSITIVE_INFINITY;
 			int worstCombo = -1;
 			for (int j=0; j<numMoveCombos/numPlayerMoves; j++){
@@ -199,10 +201,11 @@ public class GameTreeNode {
 		//return ((isOpponent)?-1:1)*getScore()/100 + Math.sqrt(GameTree.selectTemperature*Math.log(parentNumVisits)/numVisits);
 		//return ((isOpponent)?-1:1)*getScore()/100 + Math.sqrt(GameTree.selectTemperature*Math.log(parentNumVisits)/numVisits);
 
+		double temperature = 45./numMoves;
 		if (isOpponent){
-			return getScore()/100;
+			return getScore()/100 - Math.sqrt(temperature*Math.log(parentNumVisits)/numVisits);
 		}
-		return getScore()/100 + Math.sqrt(TREE.selectTemperature*Math.log(parentNumVisits)/numVisits);
+		return getScore()/100 + Math.sqrt(temperature*Math.log(parentNumVisits)/numVisits);
 		//return getScore()/100 + Math.sqrt((2000./(numMoves*numMoves))*Math.log(parentNumVisits)/numVisits);
 	}
 
